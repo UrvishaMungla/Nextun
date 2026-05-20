@@ -1,0 +1,633 @@
+/* ════════════════════════════════════════════════
+   NEXTUN  ·  Signup Page  ·  Figma-faithful CSS
+   ════════════════════════════════════════════════ */
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+button { font-family: inherit; cursor: pointer; }
+a      { font-family: inherit; }
+
+/* ── Design tokens ── */
+:root {
+  /* Colors */
+  --green:          #22C55E;
+  --green-hover:    #1AAF52;
+  --green-shadow:   rgba(34,197,94,.30);
+  --red:            #EF4444;
+  --red-badge:      #EF4444;
+
+  /* Page */
+  --page-bg:        #FFFFFF;
+  --dot-color:      #CBD1DC;
+
+  /* Illustration card */
+  --illus-bg:       transparent;
+  --illus-border:   transparent;
+  --illus-dot:      #D1D6E2;
+
+  /* Form card  (exact Figma: #FAFAFE) */
+  --card-bg:        #FAFAFE;
+  --card-border:    #E2E6EF;
+  --card-shadow:    0 2px 8px rgba(0,0,0,.06), 0 16px 48px rgba(0,0,0,.07);
+
+  /* Inputs */
+  --input-bg:       #F2F4F8;
+  --input-border:   #E0E4EF;
+  --input-focus-bd: #22C55E;
+  --input-focus-sh: rgba(34,197,94,.14);
+  --input-err-bd:   #EF4444;
+  --input-err-sh:   rgba(239,68,68,.10);
+  --input-ok-bd:    #22C55E;
+
+  /* Text */
+  --txt-title:      #111827;
+  --txt-label:      #374151;
+  --txt-body:       #4B5563;
+  --txt-muted:      #9CA3AF;
+  --txt-green:      #22C55E;
+  --txt-red:        #EF4444;
+
+  /* Geometry */
+  --r-card:         24px;
+  --r-input:        10px;
+  --r-pill:         999px;
+  --r-badge:        8px;
+
+  /* Typography */
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --ease: cubic-bezier(.4,0,.2,1);
+}
+
+/* ── Base ── */
+html, body {
+  min-height: 100vh;
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  color: var(--txt-label);
+}
+
+/* ── Full-page dot grid ── */
+body {
+  background-color: var(--page-bg);
+  background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ── Utility ── */
+.gone { display: none !important; }
+
+/* ════════════════════════════════════════════════
+   PAGE WRAPPER
+   Figma total width ≈ 1360px:
+     left-col  ~560px  +  gap 80px  +  form-card ~720px
+   ════════════════════════════════════════════════ */
+.page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Outer horizontal padding so content doesn't touch viewport edges */
+  padding: 64px 80px;
+
+  /* Gap between left column and form card */
+  gap: 80px;
+}
+
+/* ════════════════════════════════════════════════
+   LEFT COLUMN
+   Figma: logo (210×79) + illus card (617×617)
+   We use 560px width to stay proportional at 1360px total
+   ════════════════════════════════════════════════ */
+.left-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 40px;           /* space between logo and illustration */
+  flex-shrink: 0;
+  width: 560px;        /* ← was 480px, now matches Figma proportions */
+}
+
+/* ── Logo ── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+
+.logo-mark {
+  width: auto;
+  height: 52px;
+  max-width: 100%;
+  flex-shrink: 0;
+  object-fit: contain;   /* works for both <svg> and <img> */
+  display: block;
+}
+
+/* ── Illustration wrapper  (badge-positioning parent) ── */
+.illus-wrap {
+  position: relative;
+  width: 100%;
+  /*
+    Vertical padding: gives room for SELL (top) and BUY (bottom)
+    badges that float outside the card's bounds.
+    36px = badge height ~34px + a little breathing room
+  */
+  padding: 36px 36px 36px 0;
+}
+
+/* ── Illustration card  (617×617 in Figma → fills left-col width) ── */
+.illus-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;  /* always square */
+  background: transparent;
+  border: none;
+  border-radius: 18px;
+  overflow: hidden;      /* clips dot-bg to rounded corners */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* dot grid inside illustration card */
+.illus-dot-bg {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, var(--illus-dot) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Trading Chart Image ── */
+.trading-chart-img {
+  display: block;
+  width: 85%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* ════════════════════════════════════════════════
+   FORM CARD
+   Figma: 760×864 · #FAFAFE · radius 24px
+   At 1360px total we scale to ≈ 640px wide.
+   Padding 56px × 60px → content width = 640 - 120 = 520px
+   → "Create Your Nextun Account" fits on ONE line at ~2rem
+   ════════════════════════════════════════════════ */
+.form-card {
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--r-card);
+  box-shadow: var(--card-shadow);
+  width: 100%;
+  max-width: 640px;    /* ← was 520px, now gives single-line title */
+  padding: 56px 60px 52px;
+  flex-shrink: 0;
+}
+
+/* ── Form title ── */
+.form-title {
+  font-family: 'Merriweather', serif;
+  font-weight: 400;
+  font-size: 39px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--txt-title);
+  margin-bottom: 36px;
+}
+
+/* ════════════════════════════════════════════════
+   FIELDS
+   ════════════════════════════════════════════════ */
+.fgroup {
+  margin-bottom: 22px;
+}
+
+.flabel {
+  display: block;
+  font-family: 'Merriweather', serif;
+  font-weight: 300;
+  font-size: 19px;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: var(--txt-label);
+  margin-bottom: 8px;
+}
+
+/* input wrapper */
+.ibox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* base input */
+.finput {
+  width: 100%;
+  height: 52px;        /* ← was 50px; matches Figma input height */
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--r-input);
+  padding: 0 16px;
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: var(--txt-label);
+  outline: none;
+  transition: border-color .2s var(--ease),
+              background   .2s var(--ease),
+              box-shadow   .2s var(--ease);
+}
+
+.finput.with-eye {
+  padding-right: 48px;
+}
+
+.finput::placeholder {
+  color: var(--txt-muted);
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+/* focus */
+.finput:focus {
+  background: #fff;
+  border-color: var(--input-focus-bd);
+  box-shadow: 0 0 0 3.5px var(--input-focus-sh);
+}
+
+/* validation states */
+.finput.err {
+  border-color: var(--input-err-bd);
+  box-shadow: 0 0 0 3px var(--input-err-sh);
+}
+.finput.ok {
+  border-color: var(--input-ok-bd);
+}
+
+/* ── Eye toggle ── */
+.eye-btn {
+  position: absolute;
+  right: 13px;
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--txt-muted);
+  display: flex;
+  align-items: center;
+  border-radius: 5px;
+  transition: color .16s;
+}
+.eye-btn:hover { color: var(--txt-body); }
+.eye-ico {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* ── Error text (no min-height so it doesn't add ghost space) ── */
+.ferr {
+  display: block;
+  font-size: 0.775rem;
+  font-weight: 500;
+  color: var(--txt-red);
+  margin-top: 4px;
+  line-height: 1.3;
+  min-height: 0;       /* removed min-height — no phantom spacing */
+}
+/* Only allocate height when there IS an error */
+.ferr:not(:empty) { margin-top: 5px; }
+
+/* ── Passwords match line ── */
+.match-line {
+  display: block;
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0;
+  min-height: 0;       /* no ghost spacing when empty */
+}
+.match-line:not(:empty) { margin-top: 6px; }
+.match-line.ok  { color: #32C997; }
+.match-line.bad { color: var(--txt-red);   }
+
+/* ════════════════════════════════════════════════
+   TERMS CHECKBOX
+   ════════════════════════════════════════════════ */
+.terms-row {
+  margin-top: 4px;
+  margin-bottom: 28px;
+}
+
+.cb-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Hide native input */
+.cb-real {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Custom checkbox box */
+.cb-box {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #C8CDD8;
+  border-radius: 4px;
+  background: var(--input-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  transition: background .16s, border-color .16s, box-shadow .16s;
+}
+
+.cb-real:checked + .cb-box {
+  background: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(34,197,94,.18);
+}
+
+/* Tick inside box */
+.cb-tick {
+  width: 11px;
+  height: 9px;
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity .14s, transform .14s;
+}
+.cb-real:checked + .cb-box .cb-tick {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.cb-text {
+  font-size: 0.875rem;
+  color: var(--txt-body);
+  line-height: 1.55;
+}
+
+/* Links */
+.txt-link {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 500;
+  transition: opacity .15s;
+  color: var(--txt-green); /* default green */
+}
+.txt-link:hover { opacity: 0.72; }
+.txt-link--bold { font-weight: 600; text-decoration: none; }
+
+/* Blue variant — Privacy Policy, Terms of Services, Log in */
+.txt-link--blue {
+  color: #3B7BF6;           /* matches typical Figma blue link */
+}
+.txt-link--blue:hover { opacity: 0.78; }
+
+/* ════════════════════════════════════════════════
+   NEXT BUTTON  — solid green pill
+   ════════════════════════════════════════════════ */
+.btn-next {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 54px;        /* ← was 52px */
+  background: var(--green);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--r-pill);
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 20px var(--green-shadow);
+  transition: background .18s, transform .18s var(--ease), box-shadow .18s;
+}
+.btn-next:hover {
+  background: var(--green-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(34,197,94,.40);
+}
+.btn-next:active  { transform: translateY(0); }
+.btn-next:disabled { opacity: .65; pointer-events: none; }
+
+/* spinner icon */
+.spinner {
+  width: 20px;
+  height: 20px;
+  animation: spin .85s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ════════════════════════════════════════════════
+   LOGIN / FORGOT ROWS
+   ════════════════════════════════════════════════ */
+.login-row {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--txt-body);
+  margin-top: 20px;
+}
+
+.forgot-row {
+  margin-top: -12px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.forgot-row a {
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: #0066DB;
+  text-decoration: none;
+}
+.forgot-row a:hover {
+  text-decoration: underline;
+}
+
+/* ════════════════════════════════════════════════
+   GOOGLE BUTTON  — white outlined pill
+   ════════════════════════════════════════════════ */
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 52px;
+  background: #fff;
+  border: 1.5px solid #DDE1EC;
+  border-radius: var(--r-pill);
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--txt-label);
+  margin-top: 14px;
+  transition: border-color .18s, box-shadow .18s, transform .18s var(--ease);
+}
+.btn-google:hover {
+  border-color: #b8bdc9;
+  box-shadow: 0 3px 12px rgba(0,0,0,.08);
+  transform: translateY(-1px);
+}
+.btn-google:active { transform: translateY(0); }
+
+/* ════════════════════════════════════════════════
+   VALIDATION SHAKE
+   ════════════════════════════════════════════════ */
+@keyframes shake {
+  0%,100% { transform: translateX(0);    }
+  20%      { transform: translateX(-5px); }
+  40%      { transform: translateX(5px);  }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(3px);  }
+}
+.shake { animation: shake .38s ease; }
+
+/* ════════════════════════════════════════════════
+   SUCCESS OVERLAY
+   ════════════════════════════════════════════════ */
+.form-card.done {
+  position: relative;
+  overflow: hidden;
+}
+.form-card.done::after {
+  content: '✓  Account Created Successfully!';
+  position: absolute;
+  inset: 0;
+  background: rgba(250,250,254,.96);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--green);
+  border-radius: var(--r-card);
+  z-index: 20;
+  animation: fadeIn .3s ease;
+}
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+/* ════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   ════════════════════════════════════════════════ */
+
+/* ── 1280px: slight squeeze ── */
+@media (max-width: 1280px) {
+  .page-wrapper {
+    gap: 56px;
+    padding: 56px 60px;
+  }
+  .left-col  { width: 500px; }
+  .form-card { max-width: 580px; padding: 52px 52px 48px; }
+}
+
+/* ── 1100px: tighter ── */
+@media (max-width: 1100px) {
+  .page-wrapper {
+    gap: 40px;
+    padding: 48px 40px;
+  }
+  .left-col  { width: 420px; }
+  .form-card {
+    max-width: 520px;
+    padding: 48px 44px 44px;
+  }
+  .form-title {
+    font-size: 1.75rem;
+    white-space: normal; /* allow wrap on smaller viewports */
+  }
+}
+
+/* ── 900px: stack vertically ── */
+@media (max-width: 900px) {
+  .page-wrapper {
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 28px 60px;
+    gap: 32px;
+  }
+
+  .left-col {
+    width: 100%;
+    max-width: 520px;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 32px;
+  }
+
+  .logo { 
+    width: 100%; 
+    justify-content: center;
+  }
+
+  .illus-wrap {
+    max-width: 460px;
+    flex: 1;
+    padding-right: 0;
+    padding-bottom: 32px;
+  }
+
+  .form-card {
+    max-width: 520px;
+    width: 100%;
+    padding: 44px 40px 36px;
+  }
+
+  .form-title {
+    font-size: 1.75rem;
+    white-space: normal;
+    margin-bottom: 28px;
+  }
+}
+
+/* ── 600px: mobile ── */
+@media (max-width: 600px) {
+  .page-wrapper { padding: 36px 20px 48px; }
+
+  .left-col {
+    flex-direction: column;
+    align-items: center;
+    max-width: 100%;
+  }
+
+  .illus-wrap { max-width: 100%; width: 100%; padding-right: 0; padding-bottom: 24px; }
+
+  .form-card {
+    padding: 36px 24px 32px;
+    border-radius: 18px;
+    max-width: 100%;
+  }
+
+  .form-title { font-size: 1.55rem; margin-bottom: 22px; }
+  .finput     { height: 48px; }
+  .btn-next   { height: 50px; }
+}
+
+/* ── 400px: very small phones ── */
+@media (max-width: 400px) {
+  .page-wrapper { padding: 28px 14px 40px; }
+  .form-card    { padding: 28px 18px 24px; }
+  .form-title   { font-size: 1.35rem; }
+}
