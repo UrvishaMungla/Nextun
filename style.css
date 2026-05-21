@@ -182,9 +182,13 @@ body {
   border-radius: var(--r-card);
   box-shadow: var(--card-shadow);
   width: 100%;
-  max-width: 640px;    /* ← was 520px, now gives single-line title */
-  padding: 56px 60px 52px;
+  max-width: 760px;
+  height: 864px;       /* exact Figma spec: 864px */
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  /* padding removed to allow exact positioning from top */
 }
 
 /* ── Form title ── */
@@ -195,14 +199,46 @@ body {
   line-height: 1.2;
   letter-spacing: -0.01em;
   color: var(--txt-title);
-  margin-bottom: 36px;
+  /* margins will be set per-view to match absolute positioning */
+}
+
+/* ── View Containers ── */
+#signup-view, #login-view, #broker-view {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Signup specific */
+#signup-view .form-title {
+  width: 532px;
+  margin: 40px auto 40px auto; /* left 114 + width 532 = 646. Right is 114. Centered! */
+  text-align: left; /* matching inputs alignment */
+}
+
+/* Login specific */
+#login-view .form-title {
+  width: 450px;
+  height: 94px;
+  margin: 110px auto 40px auto; /* top 110px, left 155px is centered */
+  text-align: center;
+}
+
+/* Broker specific */
+#broker-view .form-title {
+  width: 555px;
+  height: 94px;
+  margin: 125px auto 10px auto; /* top 125px, left 103px is centered */
+  text-align: center;
 }
 
 /* ════════════════════════════════════════════════
    FIELDS
    ════════════════════════════════════════════════ */
 .fgroup {
-  margin-bottom: 22px;
+  width: 532px;
+  margin: 0 auto 22px auto;
 }
 
 .flabel {
@@ -226,11 +262,11 @@ body {
 /* base input */
 .finput {
   width: 100%;
-  height: 52px;        /* ← was 50px; matches Figma input height */
-  background: var(--input-bg);
-  border: 1.5px solid var(--input-border);
-  border-radius: var(--r-input);
-  padding: 0 16px;
+  height: 69px;        /* exact Figma spec: 69px */
+  background: transparent;
+  border: 1px solid var(--input-border); /* using 1px for browser consistency */
+  border-radius: 28px; /* exact Figma spec: 28px */
+  padding: 0 20px;
   font-family: 'Roboto Serif', serif;
   font-weight: 400;
   font-size: 16px;
@@ -238,9 +274,7 @@ body {
   letter-spacing: 0;
   color: var(--txt-label);
   outline: none;
-  transition: border-color .2s var(--ease),
-              background   .2s var(--ease),
-              box-shadow   .2s var(--ease);
+  transition: border-color .15s, box-shadow .15s, background .15s;
 }
 
 .finput.with-eye {
@@ -323,8 +357,8 @@ body {
    TERMS CHECKBOX
    ════════════════════════════════════════════════ */
 .terms-row {
-  margin-top: 4px;
-  margin-bottom: 28px;
+  width: 532px;
+  margin: 4px auto 28px auto;
 }
 
 .cb-label {
@@ -379,25 +413,30 @@ body {
 }
 
 .cb-text {
-  font-size: 0.875rem;
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0;
   color: var(--txt-body);
-  line-height: 1.55;
 }
 
 /* Links */
 .txt-link {
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
   text-decoration: underline;
   text-underline-offset: 2px;
-  font-weight: 500;
   transition: opacity .15s;
   color: var(--txt-green); /* default green */
 }
 .txt-link:hover { opacity: 0.72; }
-.txt-link--bold { font-weight: 600; text-decoration: none; }
+.txt-link--bold { font-weight: 700; text-decoration: none; }
 
 /* Blue variant — Privacy Policy, Terms of Services, Log in */
 .txt-link--blue {
-  color: #3B7BF6;           /* matches typical Figma blue link */
+  color: #0066DB;
 }
 .txt-link--blue:hover { opacity: 0.78; }
 
@@ -409,15 +448,17 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: 100%;
-  height: 54px;        /* ← was 52px */
+  width: 532px;
+  margin: 0 auto;
+  height: 69px;        /* match input height */
   background: var(--green);
   color: #fff;
-  font-size: 1rem;
-  font-weight: 600;
+  font-family: 'Merriweather', serif;
+  font-weight: 400;
+  font-size: 17px;
+  letter-spacing: 0.01em;
   border: none;
-  border-radius: var(--r-pill);
-  letter-spacing: 0.02em;
+  border-radius: 28px; /* match input radius */
   box-shadow: 0 6px 20px var(--green-shadow);
   transition: background .18s, transform .18s var(--ease), box-shadow .18s;
 }
@@ -441,15 +482,20 @@ body {
    LOGIN / FORGOT ROWS
    ════════════════════════════════════════════════ */
 .login-row {
+  width: 284px;        /* exact Figma spec: 284px */
+  height: 24px;        /* exact Figma spec: 24px */
+  margin: 20px auto 0 auto; /* centered, with 20px top gap from button */
   text-align: center;
-  font-size: 0.9rem;
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
   color: var(--txt-body);
-  margin-top: 20px;
 }
 
 .forgot-row {
-  margin-top: -12px;
-  margin-bottom: 24px;
+  width: 532px;
+  margin: -12px auto 24px auto;
   text-align: left;
 }
 
@@ -474,13 +520,16 @@ body {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  width: 100%;
-  height: 52px;
+  width: 532px;        /* exact Figma spec: 532px */
+  margin: 40px auto 0 auto; /* exact spacing: 698px (Google top) - 658px (login-row bottom) = 40px */
+  height: 56px;        /* exact Figma spec: 56px */
   background: #fff;
-  border: 1.5px solid #DDE1EC;
-  border-radius: var(--r-pill);
-  font-size: 0.92rem;
-  font-weight: 500;
+  border: 1px solid #DDE1EC;
+  border-radius: 28px;
+  padding: 20px 40px;  /* exact Figma spec padding */
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
   color: var(--txt-label);
   margin-top: 14px;
   transition: border-color .18s, box-shadow .18s, transform .18s var(--ease);
@@ -539,7 +588,7 @@ body {
     padding: 56px 60px;
   }
   .left-col  { width: 500px; }
-  .form-card { max-width: 580px; padding: 52px 52px 48px; }
+  .form-card { max-width: 680px; padding: 52px 52px 48px; }
 }
 
 /* ── 1100px: tighter ── */
@@ -550,12 +599,8 @@ body {
   }
   .left-col  { width: 420px; }
   .form-card {
-    max-width: 520px;
+    max-width: 580px;
     padding: 48px 44px 44px;
-  }
-  .form-title {
-    font-size: 1.75rem;
-    white-space: normal; /* allow wrap on smaller viewports */
   }
 }
 
@@ -596,8 +641,6 @@ body {
   }
 
   .form-title {
-    font-size: 1.75rem;
-    white-space: normal;
     margin-bottom: 28px;
   }
 }
@@ -620,7 +663,7 @@ body {
     max-width: 100%;
   }
 
-  .form-title { font-size: 1.55rem; margin-bottom: 22px; }
+  .form-title { font-size: 28px; margin-bottom: 22px; }
   .finput     { height: 48px; }
   .btn-next   { height: 50px; }
 }
@@ -629,5 +672,125 @@ body {
 @media (max-width: 400px) {
   .page-wrapper { padding: 28px 14px 40px; }
   .form-card    { padding: 28px 18px 24px; }
-  .form-title   { font-size: 1.35rem; }
+  .form-title   { font-size: 24px; }
+}
+
+/* ════════════════════════════════════════════════
+   BROKER VIEW — Connect Your Broker Account
+   ════════════════════════════════════════════════ */
+
+/* Override: broker title is centered */
+.broker-title {
+  text-align: center;
+  font-family: 'Merriweather', serif;
+  font-weight: 400;
+  font-size: 39px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #000000;
+  margin-bottom: 14px;
+}
+
+/* Subtitle under the heading */
+.broker-subtitle {
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0;
+  text-align: center;
+  color: #000000;
+  /* The broker card top is 295. Title bottom is 125+94=219. So we have 76px gap. */
+  margin-bottom: 28px; 
+}
+
+/* White card wrapper */
+.broker-card {
+  background: #fff;
+  border: 1.5px solid #D9D9D9; /* exact Figma spec: 1.5px */
+  border-radius: 14px;         /* exact Figma spec: 14px */
+  width: 600px;                /* exact Figma spec: 600px */
+  height: 355px;               /* exact Figma spec: 355px */
+  margin: 0 auto 32px auto;    /* centers it perfectly (left: 80px) */
+  padding: 40px 0 0 0;         /* exact Figma top margin for logo */
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* Angel One logo image */
+.broker-logo {
+  width: 454px;   /* exact Figma spec */
+  height: 94px;   /* exact Figma spec */
+  object-fit: contain;
+}
+
+/* "Login with Angel One via Smart API" text */
+.broker-card-label {
+  width: 293px;   /* exact Figma spec */
+  height: 66px;   /* exact Figma spec */
+  margin-top: 41px; /* 175px (label top) - 134px (logo bottom) = 41px */
+  font-family: 'Merriweather', serif;
+  font-weight: 400;
+  font-size: 23px;
+  line-height: 1.43;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: #000000;
+}
+
+/* Connect button */
+.btn-connect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #01C26C; /* exact Figma spec */
+  color: #fff;
+  font-family: 'Merriweather', serif;
+  font-weight: 400;
+  font-size: 16px;
+  border: none;
+  border-radius: 28px; /* exact Figma spec */
+  width: 419px;    /* exact Figma spec */
+  height: 56px;    /* exact Figma spec */
+  margin-top: 18px; /* 259px (button top) - 241px (label bottom) = 18px */
+  padding: 20px 40px; /* exact Figma spec padding */
+  cursor: pointer;
+  box-shadow: 0 4px 14px var(--green-shadow);
+  transition: transform .15s, background .15s, box-shadow .15s;
+}
+.btn-connect:hover {
+  background: #00af60;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(1, 194, 108, 0.40);
+}
+.btn-connect:active { transform: translateY(0); }
+
+/* Security disclaimer row */
+.broker-disclaimer {
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0;
+  color: #696969;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: max-content;
+  margin: 0 auto;
+}
+
+.broker-disclaimer span {
+  text-align: left;
+}
+
+/* Lock icon inside disclaimer */
+.lock-ico {
+  width: 15px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
 }

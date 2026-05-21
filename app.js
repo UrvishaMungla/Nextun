@@ -3,6 +3,7 @@
 /* ── DOM references: Views & Toggles ── */
 const signupView   = document.getElementById('signup-view');
 const loginView    = document.getElementById('login-view');
+const brokerView   = document.getElementById('broker-view');
 const linkToLogin  = document.getElementById('link-to-login');
 const linkToSignup = document.getElementById('link-to-signup');
 
@@ -53,13 +54,22 @@ linkToLogin.addEventListener('click', (e) => {
   e.preventDefault();
   signupView.classList.add('gone');
   loginView.classList.remove('gone');
+  brokerView.classList.add('gone');
 });
 
 linkToSignup.addEventListener('click', (e) => {
   e.preventDefault();
   loginView.classList.add('gone');
+  brokerView.classList.add('gone');
   signupView.classList.remove('gone');
 });
+
+/* Navigate to broker view from any screen */
+function showBrokerView() {
+  signupView.classList.add('gone');
+  loginView.classList.add('gone');
+  brokerView.classList.remove('gone');
+}
 
 /* ════════════════════════════
    EYE TOGGLE
@@ -249,11 +259,11 @@ form.addEventListener('submit', async (e) => {
   /* Simulate async API call */
   await new Promise(r => setTimeout(r, 1500));
 
-  /* Success */
+  /* Success → navigate to broker view */
   btnNext.disabled = false;
   btnLbl.classList.remove('gone');
   btnSpin.classList.add('gone');
-  formCard.classList.add('done');
+  showBrokerView();
 
   console.log('[Nextun] Signup success →', emailInput.value);
 });
@@ -276,10 +286,11 @@ loginForm.addEventListener('submit', async (e) => {
 
   await new Promise(r => setTimeout(r, 1500));
 
+  /* Success → navigate to broker view */
   loginBtnNext.disabled = false;
   loginBtnLbl.classList.remove('gone');
   loginBtnSpin.classList.add('gone');
-  formCard.classList.add('done');
+  showBrokerView();
 
   console.log('[Nextun] Login success →', loginEmail.value);
 });
@@ -290,6 +301,15 @@ loginForm.addEventListener('submit', async (e) => {
 document.querySelectorAll('.btn-google').forEach(btn => {
   btn.addEventListener('click', () => {
     console.log('[Nextun] Continue with Google');
+    showBrokerView(); /* After Google auth, also go to broker view */
   });
+});
+
+/* ════════════════════════════
+   CONNECT BROKER BUTTON (stub)
+════════════════════════════ */
+document.getElementById('btn-connect-angel').addEventListener('click', () => {
+  console.log('[Nextun] Connect Angel One via Smart API');
+  /* TODO: wire up Angel One Smart API OAuth flow */
 });
 
