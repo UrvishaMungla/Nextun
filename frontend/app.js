@@ -256,16 +256,38 @@ form.addEventListener('submit', async (e) => {
   btnLbl.classList.add('gone');
   btnSpin.classList.remove('gone');
 
-  /* Simulate async API call */
-  await new Promise(r => setTimeout(r, 1500));
-
-  /* Success → navigate to broker view */
-  btnNext.disabled = false;
-  btnLbl.classList.remove('gone');
-  btnSpin.classList.add('gone');
-  showBrokerView();
-
-  console.log('[Nextun] Signup success →', emailInput.value);
+  /* Send request to real backend */
+  try {
+    const res = await fetch('http://localhost:5000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: emailInput.value, password: pwInput.value })
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      console.log('[Nextun] Signup success →', data);
+      /* Success → navigate to login view */
+      signupView.classList.add('gone');
+      loginView.classList.remove('gone');
+      brokerView.classList.add('gone');
+      
+      // Pre-fill login email
+      loginEmail.value = emailInput.value;
+    } else {
+      console.error('[Nextun] Signup failed:', data.message);
+      setErr(emailInput, emailErr, data.message || 'Registration failed');
+      shakeFirstErr(form);
+    }
+  } catch (error) {
+    console.error('[Nextun] Network error:', error);
+    setErr(emailInput, emailErr, 'Server connection failed');
+  } finally {
+    btnNext.disabled = false;
+    btnLbl.classList.remove('gone');
+    btnSpin.classList.add('gone');
+  }
 });
 
 /* ════════════════════════════
@@ -284,15 +306,35 @@ loginForm.addEventListener('submit', async (e) => {
   loginBtnLbl.classList.add('gone');
   loginBtnSpin.classList.remove('gone');
 
-  await new Promise(r => setTimeout(r, 1500));
-
-  /* Success → navigate to broker view */
-  loginBtnNext.disabled = false;
-  loginBtnLbl.classList.remove('gone');
-  loginBtnSpin.classList.add('gone');
-  showBrokerView();
-
-  console.log('[Nextun] Login success →', loginEmail.value);
+  try {
+    const res = await fetch('http://localhost:5000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: loginEmail.value, password: loginPw.value })
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      console.log('[Nextun] Login success →', data);
+      // Store token securely
+      localStorage.setItem('nextunToken', data.token);
+      
+      /* Success → navigate to broker view */
+      showBrokerView();
+    } else {
+      console.error('[Nextun] Login failed:', data.message);
+      setErr(loginEmail, loginEmailErr, data.message || 'Login failed');
+      shakeFirstErr(loginForm);
+    }
+  } catch (error) {
+    console.error('[Nextun] Network error:', error);
+    setErr(loginEmail, loginEmailErr, 'Server connection failed');
+  } finally {
+    loginBtnNext.disabled = false;
+    loginBtnLbl.classList.remove('gone');
+    loginBtnSpin.classList.add('gone');
+  }
 });
 
 /* ════════════════════════════
