@@ -1,0 +1,613 @@
+/* CSS variables for consistency */
+:root {
+  --bg-color: #F4F7FE;
+  --sidebar-bg: #081030;
+  --panel-bg: #FFFFFF;
+  --sidebar-width: 265px;
+  --header-height: 64px;
+  
+  --text-dark: #2B3674;
+  --text-gray: #A3AED0;
+  --text-light: #FFFFFF;
+  
+  --green: #01C26C;
+  --red: #EE5D50;
+  
+  --card-blue: #C2E9FB;
+  --card-light-blue: #E0F2FE;
+  --icon-bg: #F4F7FE;
+  --border-color: #E0E5F2;
+  --cal-cell-green-bg: #E6F9F0;
+  --cal-cell-red-bg: #FDECEC;
+  
+  --card-radius: 12px;
+  --shadow: 0px 2px 2.1px rgba(37, 46, 84, 0.09);
+}
+
+body.dark-theme {
+  --bg-color: #0F172A;
+  --sidebar-bg: #081030;
+  --panel-bg: #1E293B;
+  
+  --text-dark: #FFFFFF;
+  --text-gray: #94A3B8;
+  
+  --card-blue: #225164;
+  --card-light-blue: #1C384B;
+  --icon-bg: #334155;
+  --border-color: #334155;
+  --cal-cell-green-bg: rgba(1, 194, 108, 0.15);
+  --cal-cell-red-bg: rgba(238, 93, 80, 0.15);
+  
+  --shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-dark);
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ==================
+   SIDEBAR
+   ================== */
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--sidebar-bg);
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 0;
+  color: white;
+  z-index: 10;
+}
+
+.sidebar-header {
+  padding: 0 30px;
+  margin-bottom: 40px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.brand-text {
+  font-size: 22px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  padding: 0 15px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 15px;
+  color: #8F9BBA;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.nav-item:hover, .nav-item.active {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.sidebar-footer {
+  padding: 0 15px;
+  margin-top: auto;
+}
+
+/* ==================
+   MAIN CONTENT
+   ================== */
+.main-content {
+  margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
+  min-height: 100vh;
+  padding: 0 32px 32px 32px; /* 32px padding based on Figma left 297px */
+}
+
+/* Top Header */
+.top-nav {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  width: 100%;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.date-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-gray);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.theme-toggle {
+  display: flex;
+  background: var(--panel-bg);
+  border-radius: 20px;
+  padding: 4px;
+  box-shadow: 0px 2px 8px rgba(0,0,0,0.04);
+}
+
+.theme-btn {
+  background: none;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 16px;
+  cursor: pointer;
+  color: var(--text-gray);
+}
+
+.theme-btn.active {
+  background: var(--sidebar-bg);
+  color: white;
+}
+
+/* ==================
+   DASHBOARD GRID
+   ================== */
+.dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 10px;
+  width: 100%;
+}
+
+/* Top Row Cards */
+.top-cards-row {
+  display: flex;
+  gap: 24px;
+}
+
+.metric-card {
+  flex: 1;
+  height: 160px;
+  border-radius: var(--card-radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow);
+  color: var(--text-dark);
+}
+
+.bg-gradient-blue {
+  background: var(--card-blue);
+}
+
+.bg-gradient-light-blue {
+  background: var(--card-light-blue);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.card-icon {
+  width: 20px;
+  height: 20px;
+  color: #4318FF;
+  opacity: 0.7;
+}
+
+.card-body h2 {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.card-body .subtitle {
+  font-size: 12px;
+  color: #707EAE;
+  font-weight: 500;
+}
+
+/* Text Colors */
+.text-green { color: var(--green); }
+.text-red { color: var(--red); }
+.text-dark { color: var(--text-dark); }
+
+/* Main Columns (Broker + Strategy | Calendar) */
+.main-columns {
+  display: flex;
+  gap: 24px;
+}
+
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+}
+
+.right-column {
+  flex: 1;
+}
+
+/* Shared Panel Styles */
+.dashboard-panel {
+  background: var(--panel-bg);
+  border-radius: var(--card-radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.panel-header p {
+  font-size: 13px;
+  color: var(--text-gray);
+  margin-bottom: 24px;
+}
+
+/* Broker Panel Specific */
+.broker-panel {
+  height: 349px;
+}
+
+.broker-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.broker-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.broker-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.dark-theme .angel-one-light { display: none; }
+body.dark-theme .angel-one-dark { display: block !important; }
+
+.broker-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.broker-info span {
+  font-size: 12px;
+  color: var(--text-gray);
+}
+
+.status-badge.active {
+  background: var(--green);
+  color: #000000;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+body.dark-theme .card-icon path {
+  fill: #FFFFFF !important;
+}
+
+.broker-metrics, .strategy-metrics {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.broker-metrics .metric, .strategy-metrics .metric {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--icon-bg);
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.metric .lbl {
+  font-size: 13px;
+  color: var(--text-gray);
+}
+
+.metric .val {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.btn-outline {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  background: var(--panel-bg);
+  color: var(--text-dark);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: auto;
+}
+
+.btn-outline:hover {
+  background: var(--icon-bg);
+}
+
+/* Active Strategy Panel Specific */
+.strategy-panel {
+  height: 349px;
+  display: flex;
+  flex-direction: column;
+}
+
+.strategy-toggle-box {
+  background: #F0F8FF;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+body.dark-theme .strategy-toggle-box {
+  background: var(--icon-bg);
+}
+
+.strategy-info h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.strategy-info span {
+  font-size: 12px;
+  color: var(--text-gray);
+}
+
+/* Custom Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-color);
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--panel-bg);
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: var(--green);
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Calendar Panel Specific */
+.calendar-panel {
+  height: 722px;
+}
+
+.calendar-wrapper-box {
+  background: var(--icon-bg);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.calendar-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.calendar-controls h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.cal-nav {
+  background: transparent;
+  color: var(--text-dark);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 50px);
+  justify-content: space-between;
+  align-content: space-between;
+  flex: 1;
+  row-gap: 12px;
+  text-align: center;
+  margin-bottom: auto;
+}
+
+.cal-header {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+}
+
+.cal-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  border-radius: 8px;
+  gap: 2px;
+}
+
+.cal-cell .day {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cal-cell .pl {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.cal-cell.bg-green {
+  background-color: var(--cal-cell-green-bg);
+}
+
+.cal-cell.bg-green .day, .cal-cell.bg-green .pl {
+  color: var(--green);
+}
+
+.cal-cell.bg-red {
+  background-color: var(--cal-cell-red-bg);
+}
+
+.cal-cell.bg-red .day, .cal-cell.bg-red .pl {
+  color: var(--red);
+}
+
+/* Trading Summary (bottom of calendar) */
+.trading-summary {
+  background: var(--icon-bg);
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.trading-summary h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.summary-metrics {
+  display: flex;
+  justify-content: space-between;
+}
+
+.summary-metrics .metric {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summary-metrics .lbl {
+  font-size: 12px;
+  color: var(--text-gray);
+}
+
+.summary-metrics .val {
+  font-size: 14px;
+  font-weight: 700;
+}

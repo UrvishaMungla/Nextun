@@ -64,7 +64,7 @@ linkToSignup.addEventListener('click', (e) => {
   signupView.classList.remove('gone');
 });
 
-/* Navigate to broker view from any screen */
+/* Show the Broker Connection view */
 function showBrokerView() {
   signupView.classList.add('gone');
   loginView.classList.add('gone');
@@ -352,6 +352,7 @@ document.querySelectorAll('.btn-google').forEach(btn => {
 ════════════════════════════ */
 document.getElementById('btn-connect-angel').addEventListener('click', () => {
   console.log('[Nextun] Connect Angel One via Smart API');
-  /* TODO: wire up Angel One Smart API OAuth flow */
+  /* Redirect to dashboard after clicking connect */
+  window.location.href = 'dashboard.html';
 });
 
