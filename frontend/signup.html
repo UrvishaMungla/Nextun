@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nextun</title>
+  <meta name="description" content="Sign up for Nextun – the modern fintech platform for smarter trading." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@300;400&family=Roboto+Serif:opsz,wght@8..144,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- ══════════════════════════════
+       LEFT SIDE
+  ══════════════════════════════ -->
+  <div class="left-col">
+
+    <!-- Logo —— swap logo.png with your exact Figma export (symbol + text) -->
+    <div class="logo" id="logo">
+      <img
+        src="logo.png"
+        alt="Nextun logo"
+        class="logo-mark"
+        id="logo-img"
+      />
+    </div>
+
+    <!-- Illustration card  (617×617 in Figma) -->
+    <!-- illus-wrap is the badge-positioning parent; illus-card clips the dot grid only -->
+    <div class="illus-wrap">
+
+      <div class="illus-card" id="illus-card">
+        <!-- The user will replace trading_chart.png with their exact export from Figma -->
+        <img src="trading_chart.png" alt="Trading Chart Illustration" class="trading-chart-img" />
+      </div><!-- /.illus-card -->
+
+    </div><!-- /.illus-wrap -->
+
+  </div><!-- /.left-col -->
+
+
+  <!-- ══════════════════════════════
+       RIGHT SIDE — Form Card
+       Figma: 760×864 · #FAFAFE · radius 24px
+  ══════════════════════════════ -->
+  <main class="form-card" id="form-card">
+
+    <!-- ══════════════════════════════
+         SIGNUP VIEW
+    ══════════════════════════════ -->
+    <div id="signup-view">
+      <h1 class="form-title">Create Your Nextun Account</h1>
+
+      <form id="signup-form" novalidate autocomplete="off">
+        <!-- Email -->
+        <div class="fgroup" id="grp-email">
+          <label class="flabel" for="email">Email</label>
+          <div class="ibox">
+            <input class="finput" type="email" id="email" name="email" placeholder="Enter your email address" autocomplete="email"/>
+          </div>
+          <span class="ferr" id="email-err"></span>
+        </div>
+
+        <!-- Create Password -->
+        <div class="fgroup" id="grp-pw">
+          <label class="flabel" for="password">Create Password</label>
+          <div class="ibox">
+            <input class="finput with-eye" type="password" id="password" name="password" placeholder="Create a strong password" autocomplete="new-password"/>
+            <button type="button" class="eye-btn" id="eye-pw" aria-label="Toggle password">
+              <svg id="eye-pw-off" class="eye-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+              <svg id="eye-pw-on" class="eye-ico gone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <span class="ferr" id="pw-err"></span>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="fgroup" id="grp-cf">
+          <label class="flabel" for="confirm">Confirm Password</label>
+          <div class="ibox">
+            <input class="finput with-eye" type="password" id="confirm" name="confirm" placeholder="Create a strong password" autocomplete="new-password"/>
+            <button type="button" class="eye-btn" id="eye-cf" aria-label="Toggle confirm">
+              <svg id="eye-cf-off" class="eye-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+              <svg id="eye-cf-on" class="eye-ico gone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <span class="match-line" id="match-line"></span>
+          <span class="ferr" id="cf-err"></span>
+        </div>
+
+        <!-- Terms -->
+        <div class="terms-row" id="grp-terms">
+          <label class="cb-label" for="terms">
+            <input class="cb-real" type="checkbox" id="terms" name="terms" />
+            <span class="cb-box">
+              <svg class="cb-tick" viewBox="0 0 13 10" fill="none">
+                <path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="cb-text">
+              I have read and agree to <a href="#" id="privacy-link" class="txt-link txt-link--blue">Privacy Policy</a> and <a href="#" id="tos-link" class="txt-link txt-link--blue">Terms of Services</a>.
+            </span>
+          </label>
+          <span class="ferr" id="terms-err"></span>
+        </div>
+
+        <!-- Next button -->
+        <button type="submit" class="btn-next" id="btn-next">
+          <span id="btn-lbl">Next</span>
+          <span id="btn-spin" class="gone">
+            <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83 M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+          </span>
+        </button>
+      </form>
+
+      <!-- Already have an account -->
+      <p class="login-row">
+        Already have an account?&nbsp;
+        <a href="#" class="txt-link txt-link--bold txt-link--blue" id="link-to-login">Log in →</a>
+      </p>
+
+      <!-- Continue with Google -->
+      <button type="button" class="btn-google btn-google-signup">
+        <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.3 36 24 36 c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7 C34.2 6.5 29.4 4 24 4 12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20c0-1.3-.15-2.6-.4-3.9z"/>
+          <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.2 6.5 29.4 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/>
+          <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.2 26.8 36 24 36c-5.2 0-9.6-3.3-11.2-8l-6.5 5C9.7 39.7 16.3 44 24 44z"/>
+          <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.6l6.2 5.2C37 39 44 34 44 24c0-1.3-.15-2.6-.4-3.9z"/>
+        </svg>
+        <span>Continue With Google</span>
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════
+         LOGIN VIEW
+    ══════════════════════════════ -->
+    <div id="login-view" class="gone">
+      <h1 class="form-title" style="text-align: center;">Login &nbsp;to<br/>Your Nextun Account</h1>
+
+      <form id="login-form" novalidate autocomplete="off">
+        <!-- Email -->
+        <div class="fgroup" id="login-grp-email">
+          <label class="flabel" for="login-email">Email</label>
+          <div class="ibox">
+            <input class="finput" type="email" id="login-email" name="login-email" placeholder="Enter your email address" autocomplete="email"/>
+          </div>
+          <span class="ferr" id="login-email-err"></span>
+        </div>
+
+        <!-- Password -->
+        <div class="fgroup" id="login-grp-pw">
+          <label class="flabel" for="login-password">Create Password</label>
+          <div class="ibox">
+            <input class="finput with-eye" type="password" id="login-password" name="login-password" placeholder="Create a strong password" autocomplete="current-password"/>
+            <button type="button" class="eye-btn" id="login-eye-pw" aria-label="Toggle password">
+              <svg id="login-eye-pw-off" class="eye-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+              <svg id="login-eye-pw-on" class="eye-ico gone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <span class="ferr" id="login-pw-err"></span>
+        </div>
+
+        <div class="forgot-row">
+          <a href="#" class="txt-link txt-link--blue">Forgot Password?</a>
+        </div>
+
+        <!-- Next button -->
+        <button type="submit" class="btn-next" id="login-btn-next">
+          <span id="login-btn-lbl">Next</span>
+          <span id="login-btn-spin" class="gone">
+            <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83 M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+          </span>
+        </button>
+      </form>
+
+      <!-- Don't have an account -->
+      <p class="login-row">
+        Don't have an account?&nbsp;
+        <a href="#" class="txt-link txt-link--bold txt-link--blue" id="link-to-signup">Sign Up →</a>
+      </p>
+
+      <!-- Continue with Google -->
+      <button type="button" class="btn-google btn-google-login">
+        <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.3 36 24 36 c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7 C34.2 6.5 29.4 4 24 4 12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20c0-1.3-.15-2.6-.4-3.9z"/>
+          <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.2 6.5 29.4 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/>
+          <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.2 26.8 36 24 36c-5.2 0-9.6-3.3-11.2-8l-6.5 5C9.7 39.7 16.3 44 24 44z"/>
+          <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.6l6.2 5.2C37 39 44 34 44 24c0-1.3-.15-2.6-.4-3.9z"/>
+        </svg>
+        <span>Continue With Google</span>
+      </button>
+    </div><!-- /#login-view -->
+
+    <!-- ══════════════════════════════
+         BROKER VIEW — Connect Broker
+    ══════════════════════════════ -->
+    <div id="broker-view" class="gone">
+
+      <!-- Title -->
+      <h1 class="form-title broker-title">Welcome!<br/>Connect Your Broker Account</h1>
+
+      <!-- Subtitle -->
+      <p class="broker-subtitle">To begin auto trading, connect your broker account to our platform.</p>
+
+      <!-- Angel One broker card -->
+      <div class="broker-card" id="angel-one-card">
+
+        <!-- Logo (user will place Angle_One_Logo.png in the same folder) -->
+        <img src="Angle_One_Logo.png" alt="Angel One Logo" class="broker-logo" id="angel-one-logo" />
+
+        <!-- Login with Angel One text -->
+        <p class="broker-card-label">Login with Angel One via<br/>Smart API</p>
+
+        <!-- Connect button -->
+        <button type="button" class="btn-connect" id="btn-connect-angel">Connect</button>
+
+      </div><!-- /.broker-card -->
+
+      <!-- Security disclaimer -->
+      <p class="broker-disclaimer">
+        <svg class="lock-ico" width="15" height="20" viewBox="0 0 15 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1.83333 19.25C1.32917 19.25 0.89757 19.0705 0.538542 18.7115C0.179514 18.3524 0 17.9208 0 17.4167V8.25C0 7.74583 0.179514 7.31424 0.538542 6.95521C0.89757 6.59618 1.32917 6.41667 1.83333 6.41667H2.75V4.58333C2.75 3.31528 3.19688 2.23438 4.09063 1.34063C4.98438 0.446875 6.06528 0 7.33333 0C8.60139 0 9.68229 0.446875 10.576 1.34063C11.4698 2.23438 11.9167 3.31528 11.9167 4.58333V6.41667H12.8333C13.3375 6.41667 13.7691 6.59618 14.1281 6.95521C14.4872 7.31424 14.6667 7.74583 14.6667 8.25V17.4167C14.6667 17.9208 14.4872 18.3524 14.1281 18.7115C13.7691 19.0705 13.3375 19.25 12.8333 19.25H1.83333ZM1.83333 17.4167H12.8333V8.25H1.83333V17.4167ZM7.33333 14.6667C7.8375 14.6667 8.2691 14.4872 8.62813 14.1281C8.98715 13.7691 9.16667 13.3375 9.16667 12.8333C9.16667 12.3292 8.98715 11.8976 8.62813 11.5385C8.2691 11.1795 7.8375 11 7.33333 11C6.82917 11 6.39757 11.1795 6.03854 11.5385C5.67951 11.8976 5.5 12.3292 5.5 12.8333C5.5 13.3375 5.67951 13.7691 6.03854 14.1281C6.39757 14.4872 6.82917 14.6667 7.33333 14.6667ZM4.58333 6.41667H10.0833V4.58333C10.0833 3.81944 9.81597 3.17014 9.28125 2.63542C8.74653 2.10069 8.09722 1.83333 7.33333 1.83333C6.56944 1.83333 5.92014 2.10069 5.38542 2.63542C4.85069 3.17014 4.58333 3.81944 4.58333 4.58333V6.41667Z" fill="#696969"/>
+        </svg>
+        <span>All broker logins are securely handled through official APIs. We do not<br/>store your credentials.</span>
+      </p>
+
+    </div><!-- /#broker-view -->
+
+  </main><!-- /.form-card -->
+
+</div><!-- /.page-wrapper -->
+
+<script src="app.js?v=2"></script>
+</body>
+</html>
