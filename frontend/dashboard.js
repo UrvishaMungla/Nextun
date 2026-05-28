@@ -41,4 +41,78 @@ document.addEventListener('DOMContentLoaded', () => {
       lightBtn.classList.remove('active');
     });
   }
+
+  // --- AngelOne Connect Modal Logic ---
+  const connectBtn = document.getElementById('broker-connect-btn');
+  const connectModal = document.getElementById('connect-broker-modal');
+  const closeBtn = document.getElementById('close-broker-modal');
+  const connectForm = document.getElementById('angelone-connect-form');
+  const connectMessage = document.getElementById('connect-message');
+  const submitBtn = document.getElementById('angel-submit-btn');
+
+  if (connectBtn && connectModal) {
+    connectBtn.addEventListener('click', () => {
+      connectModal.style.display = 'flex';
+    });
+  }
+
+  if (closeBtn && connectModal) {
+    closeBtn.addEventListener('click', () => {
+      connectModal.style.display = 'none';
+      connectMessage.style.display = 'none'; // reset message
+    });
+  }
+
+  if (connectForm) {
+    connectForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const clientId = document.getElementById('angel-client-id').value;
+      const pin = document.getElementById('angel-pin').value;
+      const totp = document.getElementById('angel-totp').value;
+      
+      // Basic UI feedback
+      submitBtn.textContent = 'Connecting...';
+      submitBtn.disabled = true;
+      connectMessage.style.display = 'none';
+      
+      try {
+        const response = await fetch('http://localhost:5000/api/angelone/connect', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ clientId, pin, totp })
+        });
+        
+        const data = await response.json();
+        
+        connectMessage.style.display = 'block';
+        if (data.success) {
+          connectMessage.style.color = 'var(--green)';
+          connectMessage.textContent = 'Successfully connected! (Data fetch will be active once API keys are added)';
+          // Optionally change the main button to "Connected"
+          connectBtn.textContent = 'Connected to AngelOne';
+          connectBtn.classList.remove('btn-outline');
+          connectBtn.style.background = 'var(--green)';
+          connectBtn.style.color = 'white';
+          
+          setTimeout(() => {
+            connectModal.style.display = 'none';
+          }, 2000);
+        } else {
+          connectMessage.style.color = 'var(--red)';
+          connectMessage.textContent = data.message || 'Failed to connect. Please check your credentials.';
+        }
+      } catch (error) {
+        console.error('Error connecting to broker:', error);
+        connectMessage.style.display = 'block';
+        connectMessage.style.color = 'var(--red)';
+        connectMessage.textContent = 'Server error. Please ensure backend is running.';
+      } finally {
+        submitBtn.textContent = 'Connect Account';
+        submitBtn.disabled = false;
+      }
+    });
+  }
 });
