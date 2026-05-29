@@ -256,6 +256,35 @@
 
 </div><!-- /.page-wrapper -->
 
+  <!-- Connect Broker Modal -->
+  <div class="modal-overlay" id="connect-broker-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Connect AngelOne</h2>
+        <button class="close-modal" id="close-broker-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 1.5rem; color: var(--text-gray); font-size: 0.9rem;">Please enter your AngelOne credentials to securely connect your account for automated trading.</p>
+        <form id="angelone-connect-form">
+          <div class="form-group">
+            <label for="angel-client-id">Client ID</label>
+            <input type="text" id="angel-client-id" required placeholder="Enter Client ID">
+          </div>
+          <div class="form-group">
+            <label for="angel-pin">PIN / Password</label>
+            <input type="password" id="angel-pin" required placeholder="Enter PIN">
+          </div>
+          <div class="form-group">
+            <label for="angel-totp">TOTP Code</label>
+            <input type="text" id="angel-totp" required placeholder="Enter 6-digit TOTP">
+          </div>
+          <button type="submit" class="btn btn--primary" id="angel-submit-btn" style="width: 100%; margin-top: 1rem; padding: 12px; border-radius: 8px; background: #00b852; color: white; border: none; font-weight: 600; cursor: pointer;">Connect Account</button>
+        </form>
+        <div id="connect-message" style="margin-top: 15px; font-size: 0.9rem; text-align: center; display: none;"></div>
+      </div>
+    </div>
+  </div>
+
 <script src="app.js?v=2"></script>
 </body>
 </html>

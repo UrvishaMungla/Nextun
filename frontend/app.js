@@ -348,11 +348,72 @@ document.querySelectorAll('.btn-google').forEach(btn => {
 });
 
 /* ════════════════════════════
-   CONNECT BROKER BUTTON (stub)
+   CONNECT BROKER MODAL
 ════════════════════════════ */
-document.getElementById('btn-connect-angel').addEventListener('click', () => {
-  console.log('[Nextun] Connect Angel One via Smart API');
-  /* Redirect to dashboard after clicking connect */
-  window.location.href = 'dashboard.html';
+const connectBtn = document.getElementById('btn-connect-angel');
+const connectModal = document.getElementById('connect-broker-modal');
+const closeBrokerModalBtn = document.getElementById('close-broker-modal');
+const connectForm = document.getElementById('angelone-connect-form');
+const connectMessage = document.getElementById('connect-message');
+const angelSubmitBtn = document.getElementById('angel-submit-btn');
+
+connectBtn.addEventListener('click', () => {
+  connectModal.style.display = 'flex';
+  connectMessage.style.display = 'none';
 });
 
+closeBrokerModalBtn.addEventListener('click', () => {
+  connectModal.style.display = 'none';
+});
+
+// Close modal if clicking outside
+window.addEventListener('click', (e) => {
+  if (e.target === connectModal) {
+    connectModal.style.display = 'none';
+  }
+});
+
+// Handle the AngelOne connect form submission
+connectForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const clientId = document.getElementById('angel-client-id').value;
+  const pin = document.getElementById('angel-pin').value;
+  const totp = document.getElementById('angel-totp').value;
+
+  angelSubmitBtn.textContent = 'Connecting...';
+  angelSubmitBtn.disabled = true;
+  connectMessage.style.display = 'none';
+
+  try {
+    const res = await fetch('http://localhost:5000/api/angelone/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId, pin, totp })
+    });
+    
+    const data = await res.json();
+    
+    connectMessage.style.display = 'block';
+    if (data.success) {
+      connectMessage.style.color = '#00b852';
+      connectMessage.textContent = 'Successfully connected! Redirecting to Dashboard...';
+      
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 1500);
+    } else {
+      connectMessage.style.color = '#f03e3e';
+      connectMessage.textContent = data.message || 'Failed to connect.';
+      angelSubmitBtn.textContent = 'Connect Account';
+      angelSubmitBtn.disabled = false;
+    }
+  } catch (error) {
+    console.error('AngelOne connect error:', error);
+    connectMessage.style.display = 'block';
+    connectMessage.style.color = '#f03e3e';
+    connectMessage.textContent = 'Server connection failed.';
+    angelSubmitBtn.textContent = 'Connect Account';
+    angelSubmitBtn.disabled = false;
+  }
+});

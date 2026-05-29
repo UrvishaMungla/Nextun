@@ -121,8 +121,8 @@
             </svg>
           </div>
           <div class="card-body">
-            <h2 class="text-green">+ ₹4,563.00</h2>
-            <p class="subtitle">+2.5% from yesterday</p>
+            <h2 class="text-green" id="metric-todays-pnl">+ ₹0.00</h2>
+            <p class="subtitle" id="metric-todays-pnl-sub">from yesterday</p>
           </div>
         </div>
 
@@ -140,8 +140,8 @@
             </svg>
           </div>
           <div class="card-body">
-            <h2 class="text-red">- ₹14,563.00</h2>
-            <p class="subtitle">-20.1% from last month</p>
+            <h2 class="text-red" id="metric-total-pnl">- ₹0.00</h2>
+            <p class="subtitle" id="metric-total-pnl-sub">Lifetime P&L</p>
           </div>
         </div>
 
@@ -159,8 +159,8 @@
             </svg>
           </div>
           <div class="card-body">
-            <h2 class="text-dark">7</h2>
-            <p class="subtitle">3 Profitable, 4 in loss</p>
+            <h2 class="text-dark" id="metric-open-positions">0</h2>
+            <p class="subtitle" id="metric-open-positions-sub">Active trades</p>
           </div>
         </div>
 
@@ -178,8 +178,8 @@
             </svg>
           </div>
           <div class="card-body">
-            <h2 class="text-green">₹1,25,000.00</h2>
-            <p class="subtitle">32% utilized</p>
+            <h2 class="text-green" id="metric-available-margin">₹0.00</h2>
+            <p class="subtitle" id="metric-available-margin-sub">Available for trading</p>
           </div>
         </div>
       </div>
@@ -231,11 +231,11 @@
             <div class="broker-metrics">
               <div class="metric">
                 <span class="lbl">Available Funds</span>
-                <span class="val">₹75,000.00</span>
+                <span class="val" id="broker-available-funds">₹75,000.00</span>
               </div>
               <div class="metric">
                 <span class="lbl">Margin Used</span>
-                <span class="val">₹40,000.00</span>
+                <span class="val" id="broker-margin-used">₹40,000.00</span>
               </div>
             </div>
 
@@ -363,35 +363,6 @@
     </div>
 
   </main>
-
-  <!-- Connect Broker Modal -->
-  <div class="modal-overlay" id="connect-broker-modal" style="display: none;">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Connect AngelOne</h2>
-        <button class="close-modal" id="close-broker-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p style="margin-bottom: 1.5rem; color: var(--text-gray); font-size: 0.9rem;">Please enter your AngelOne credentials to securely connect your account for automated trading.</p>
-        <form id="angelone-connect-form">
-          <div class="form-group">
-            <label for="angel-client-id">Client ID</label>
-            <input type="text" id="angel-client-id" required placeholder="Enter Client ID">
-          </div>
-          <div class="form-group">
-            <label for="angel-pin">PIN / Password</label>
-            <input type="password" id="angel-pin" required placeholder="Enter PIN">
-          </div>
-          <div class="form-group">
-            <label for="angel-totp">TOTP Code</label>
-            <input type="text" id="angel-totp" required placeholder="Enter 6-digit TOTP">
-          </div>
-          <button type="submit" class="btn btn--primary" id="angel-submit-btn" style="width: 100%; margin-top: 1rem; padding: 12px; border-radius: 8px; background: var(--green); color: white; border: none; font-weight: 600; cursor: pointer;">Connect Account</button>
-        </form>
-        <div id="connect-message" style="margin-top: 15px; font-size: 0.9rem; text-align: center; display: none;"></div>
-      </div>
-    </div>
-  </div>
 
   <script src="dashboard.js"></script>
 </body>
