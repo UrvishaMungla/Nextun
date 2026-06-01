@@ -1,14 +1,31 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 let { SmartAPI } = require("smartapi-javascript");
+const User = require('../models/User');
 
-// Global instance to hold the session for this single-user app
-let smart_api = null;
+// Simple inline auth middleware
+const protect = async (req, res, next) => {
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.id).select('-password');
+      next();
+    } catch (error) {
+      console.error(error);
+      res.status(401).json({ message: 'Not authorized, token failed' });
+    }
+  } else {
+    res.status(401).json({ message: 'Not authorized, no token' });
+  }
+};
 
 // @route   POST /api/angelone/connect
 // @desc    Connect to AngelOne using Client ID, PIN, and TOTP
-// @access  Public (for now)
-router.post('/connect', async (req, res) => {
+// @access  Private
+router.post('/connect', protect, async (req, res) => {
     const { clientId, pin, totp } = req.body;
     
     if (!process.env.ANGELONE_API_KEY) {
@@ -19,7 +36,7 @@ router.post('/connect', async (req, res) => {
     }
 
     try {
-        smart_api = new SmartAPI({
+        let smart_api = new SmartAPI({
             api_key: process.env.ANGELONE_API_KEY,
         });
 
@@ -29,6 +46,13 @@ router.post('/connect', async (req, res) => {
         if (sessionData && sessionData.status) {
             // Success! Let's get the user's profile to confirm
             const profile = await smart_api.getProfile();
+            
+            // Save tokens to DB
+            req.user.angelOneClientCode = clientId;
+            req.user.angelOneJwtToken = sessionData.data.jwtToken;
+            req.user.angelOneRefreshToken = sessionData.data.refreshToken;
+            req.user.isAngelOneConnected = true;
+            await req.user.save();
             
             res.json({
                 success: true,
@@ -56,12 +80,22 @@ router.post('/connect', async (req, res) => {
 
 // @route   GET /api/angelone/dashboard
 // @desc    Fetch all live data for the dashboard
-router.get('/dashboard', async (req, res) => {
-    if (!smart_api) {
+// @access  Private
+router.get('/dashboard', protect, async (req, res) => {
+    if (!req.user.isAngelOneConnected || !req.user.angelOneJwtToken) {
         return res.status(401).json({ success: false, message: 'Broker not connected yet.' });
     }
 
     try {
+        // Instantiate from DB tokens
+        let smart_api = new SmartAPI({
+            api_key: process.env.ANGELONE_API_KEY,
+        });
+        
+        smart_api.setAccessToken(req.user.angelOneJwtToken);
+        smart_api.setPublicToken(req.user.angelOneRefreshToken);
+        smart_api.setClientCode(req.user.angelOneClientCode);
+
         // Run fetches in parallel for speed
         const [rms, positions] = await Promise.all([
             smart_api.getRMS(),

@@ -285,55 +285,16 @@
 
             <div class="calendar-controls">
               <button class="cal-nav"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-              <h3>January 2025</h3>
+              <h3 id="calendar-month-year">January 2025</h3>
               <button class="cal-nav"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
             </div>
 
             <div class="calendar-wrapper-box">
-              <div class="calendar-grid">
+              <div class="calendar-grid" id="calendar-grid">
               <div class="cal-header">MON</div><div class="cal-header">TUE</div><div class="cal-header">WED</div><div class="cal-header">THU</div><div class="cal-header">FRI</div><div class="cal-header">SAT</div><div class="cal-header">SUN</div>
               
-              <!-- Week 1 -->
-              <div class="cal-cell bg-green"><span class="day">1</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">2</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">3</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">4</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">5</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">6</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">7</span><span class="pl">+2774</span></div>
-              
-              <!-- Week 2 -->
-              <div class="cal-cell bg-green"><span class="day">8</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">9</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">10</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">11</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">12</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-red"><span class="day">13</span><span class="pl">-774</span></div>
-              <div class="cal-cell bg-green"><span class="day">14</span><span class="pl">+2774</span></div>
-
-              <!-- Week 3 -->
-              <div class="cal-cell bg-green"><span class="day">15</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">16</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">17</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">18</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">19</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">20</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">21</span><span class="pl">+2774</span></div>
-
-              <!-- Week 4 -->
-              <div class="cal-cell bg-green"><span class="day">22</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">23</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">24</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">25</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-red"><span class="day">26</span><span class="pl">-864</span></div>
-              <div class="cal-cell bg-green"><span class="day">27</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">28</span><span class="pl">+2774</span></div>
-
-              <!-- Week 5 -->
-              <div class="cal-cell bg-green"><span class="day">29</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">30</span><span class="pl">+2774</span></div>
-              <div class="cal-cell bg-green"><span class="day">31</span><span class="pl">+2774</span></div>
-            </div>
+              <!-- JS will inject days here -->
+              </div>
             </div>
 
             <!-- Trading Summary -->
@@ -342,15 +303,15 @@
               <div class="summary-metrics">
                 <div class="metric">
                   <span class="lbl">Net P&L</span>
-                  <span class="val text-green">₹4,563.00</span>
+                  <span class="val text-green" id="summary-net-pnl">₹0.00</span>
                 </div>
                 <div class="metric">
                   <span class="lbl">Profit/Loss Days</span>
-                  <span class="val"><strong class="text-dark">18</strong> <span class="text-green">Profit |</span> <strong class="text-dark">12</strong> <span class="text-red">Loss</span></span>
+                  <span class="val"><strong class="text-dark" id="summary-profit-days">0</strong> <span class="text-green">Profit |</span> <strong class="text-dark" id="summary-loss-days">0</strong> <span class="text-red">Loss</span></span>
                 </div>
                 <div class="metric">
                   <span class="lbl">Winning</span>
-                  <span class="val">60%</span>
+                  <span class="val" id="summary-win-rate">0%</span>
                 </div>
               </div>
             </div>

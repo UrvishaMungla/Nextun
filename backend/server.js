@@ -15,6 +15,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/angelone', require('./routes/angelone'));
+app.use('/api/pnl', require('./routes/pnl'));
 
 // Root route
 app.get('/', (req, res) => {
