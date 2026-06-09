@@ -1,15 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Set current date/time
-  const datetimeSpan = document.getElementById('current-datetime');
-  if (datetimeSpan) {
-    const now = new Date();
-    // Format: 28/11/2024, 17:56
-    const options = { 
-      day: '2-digit', month: '2-digit', year: 'numeric', 
-      hour: '2-digit', minute: '2-digit', hour12: false 
-    };
-    datetimeSpan.textContent = now.toLocaleString('en-GB', options);
+  // Set Current Date and Time (Dynamic)
+  function updateDateTime() {
+    const datetimeSpan = document.getElementById('current-datetime');
+    if (datetimeSpan) {
+      const now = new Date();
+      const options = { 
+        day: '2-digit', month: '2-digit', year: 'numeric', 
+        hour: '2-digit', minute: '2-digit', hour12: false 
+      };
+      datetimeSpan.textContent = now.toLocaleString('en-GB', options).replace(',', '');
+    }
   }
+  updateDateTime();
+  setInterval(updateDateTime, 60000);
+
 
   // Handle Logout
   const logoutBtn = document.getElementById('logout-btn');

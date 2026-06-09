@@ -16,6 +16,9 @@ app.use(express.json());
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/angelone', require('./routes/angelone'));
 app.use('/api/pnl', require('./routes/pnl'));
+app.use('/api/strategies', require('./routes/strategies'));
+app.use('/api/user', require('./routes/userRoutes'));
+app.use('/api/trades', require('./routes/tradeRoutes'));
 
 // Root route
 app.get('/', (req, res) => {

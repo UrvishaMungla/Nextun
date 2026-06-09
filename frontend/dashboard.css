@@ -672,3 +672,774 @@ input:checked + .slider:before {
   font-size: 14px;
   font-weight: 700;
 }
+
+/* ==================
+   TRADING STRATEGIES PAGE
+   ================== */
+.strategies-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-top: 10px;
+}
+
+.strategies-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 32px;
+}
+
+.section-header h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.active-badge {
+  border: 1px solid var(--green);
+  color: var(--green);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  background: transparent;
+}
+
+.strategy-list-card {
+  background: var(--panel-bg);
+  border-radius: var(--card-radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid transparent;
+  transform: translateZ(0);
+  transition: all 0.3s ease;
+}
+
+.strategy-list-card.is-active {
+  background: #A6CFF8; /* Light blue */
+}
+
+body.dark-theme .strategy-list-card.is-active {
+  background: linear-gradient(90deg, #325A69 0%, #4FA3B6 100%); /* Teal gradient */
+}
+
+.strategy-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.strategy-top-row h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.strategy-list-card.is-active .strategy-top-row h3,
+.strategy-list-card.is-active .strategy-desc,
+.strategy-list-card.is-active .stat-lbl,
+.strategy-list-card.is-active .stat-val {
+  color: #0F172A; /* High contrast text against blue */
+}
+
+body.dark-theme .strategy-list-card.is-active .strategy-top-row h3,
+body.dark-theme .strategy-list-card.is-active .strategy-desc,
+body.dark-theme .strategy-list-card.is-active .stat-val,
+body.dark-theme .strategy-list-card.is-active .stat-lbl {
+  color: #FFFFFF; /* White against dark teal */
+}
+
+.strategy-desc {
+  font-size: 13px;
+  color: var(--text-gray);
+  margin-bottom: 16px;
+}
+
+.strategy-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-lbl {
+  font-size: 12px;
+  color: var(--text-gray);
+}
+
+.stat-val {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+/* ==================
+   TRADES PAGE
+   ================== */
+
+.trades-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 10px;
+  width: 100%;
+}
+
+/* Metrics Row */
+.trades-metrics-row {
+  display: flex;
+  gap: 24px;
+}
+
+.trade-metric-card {
+  flex: 1;
+  background: var(--card-blue); /* Light Mode background */
+  border-radius: var(--card-radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow);
+}
+
+body.dark-theme .trade-metric-card {
+  background: linear-gradient(90deg, #325A69 0%, #4FA3B6 100%); /* Teal gradient for all cards */
+}
+
+.tm-lbl {
+  font-size: 13px;
+  color: #0F172A; /* High contrast dark text on light blue */
+}
+
+body.dark-theme .tm-lbl {
+  color: #FFFFFF; /* White on teal */
+}
+
+.tm-val {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0F172A; /* High contrast dark text on light blue */
+}
+
+body.dark-theme .tm-val {
+  color: #FFFFFF; /* White on teal */
+}
+
+/* Utility classes for specific text colors inside the cards if needed */
+.tm-val.text-green {
+  color: #047857; /* Darker green for contrast against light blue */
+}
+body.dark-theme .tm-val.text-green {
+  color: #4ADE80; /* Lighter green for dark theme */
+}
+
+/* Toolbar */
+.trades-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.toolbar-left, .toolbar-right {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.custom-select select {
+  appearance: none;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
+  padding: 8px 36px 8px 16px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+}
+
+body.dark-theme .custom-select select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFFFFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+.sort-btn, .filter-btn {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.filter-btn {
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  justify-content: center;
+}
+
+.sort-btn:hover, .filter-btn:hover {
+  background: var(--border-color);
+}
+
+/* Data Table */
+.trades-table-wrapper {
+  background: var(--panel-bg);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+
+.trades-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.trades-table th {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+body.dark-theme .trades-table th {
+  color: var(--text-gray);
+}
+
+.trades-table td {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dark);
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+body.dark-theme .trades-table th,
+body.dark-theme .trades-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15); /* Crisper, whiter lines in dark mode */
+}
+
+.trades-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Text Colors */
+.text-green {
+  color: var(--green) !important;
+}
+
+.text-red {
+  color: var(--red) !important;
+}
+
+/* Pagination */
+.trades-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+}
+
+.pagination-info {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.page-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dark);
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-btn:hover {
+  background: var(--border-color);
+}
+
+.page-btn.active {
+  background: #0066FF; /* Bright blue for active page */
+  color: #FFFFFF;
+  border-color: #0066FF;
+}
+
+.page-ellipsis {
+  color: var(--text-gray);
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+/* ==================
+   PRICING PAGE
+   ================== */
+
+.pricing-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+}
+
+.pricing-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pricing-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.pricing-header p {
+  font-size: 14px;
+  color: var(--text-gray);
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.pricing-card {
+  background: var(--panel-bg);
+  border-radius: 16px;
+  padding: 40px 32px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  cursor: pointer;
+}
+
+.pricing-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+}
+
+body.dark-theme .pricing-card:hover {
+  box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+}
+
+.pricing-card.selected {
+  border: 2px solid #0066FF;
+}
+
+body.dark-theme .pricing-card.selected {
+  border: 2px solid var(--green);
+}
+
+.popular-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #0066FF;
+  color: #FFFFFF;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  border-bottom-left-radius: 12px;
+  border-top-right-radius: 16px;
+}
+
+body.dark-theme .popular-badge {
+  background: var(--green);
+}
+
+.plan-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-dark);
+  text-align: center;
+}
+
+.plan-price {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.plan-price .currency {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.plan-price .amount {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.plan-price .period {
+  font-size: 15px;
+  color: var(--text-gray);
+  margin-left: 4px;
+}
+
+.plan-features {
+  list-style: none;
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex-grow: 1; /* Pushes button to bottom */
+}
+
+.plan-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-dark);
+  line-height: 1.5;
+}
+
+.check-icon {
+  stroke: var(--green);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.plan-btn {
+  margin-top: 32px;
+  width: 100%;
+  border-radius: 24px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.plan-btn.outline {
+  background: transparent;
+  border: 1px solid #0066FF;
+  color: #0066FF;
+}
+
+body.dark-theme .plan-btn.outline {
+  border: 1px solid var(--text-gray);
+  color: var(--text-gray);
+}
+
+.plan-btn.solid {
+  background: #0066FF;
+  border: 1px solid #0066FF;
+  color: #FFFFFF;
+}
+
+body.dark-theme .plan-btn.solid {
+  background: var(--green);
+  border: 1px solid var(--green);
+  color: #FFFFFF;
+}
+
+.plan-btn:hover {
+  opacity: 0.8;
+}
+
+/* -----------------------------
+   SETTINGS PAGE
+----------------------------- */
+
+.settings-container {
+  padding: 24px 0;
+  width: 100%;
+}
+
+.settings-panel {
+  background: var(--panel-bg);
+  border-radius: 12px;
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
+
+.panel-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-dark);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.settings-group {
+  margin-bottom: 32px;
+}
+
+.settings-group:last-child {
+  margin-bottom: 0;
+}
+
+.settings-group-header {
+  margin-bottom: 24px;
+}
+
+.settings-group-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.settings-group-header p {
+  font-size: 13px;
+  color: var(--text-gray);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.settings-row.space-between {
+  justify-content: space-between;
+}
+
+.settings-row.align-bottom {
+  align-items: flex-end;
+}
+
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  width: 100%;
+}
+
+.input-wrapper.full-width {
+  max-width: 100%;
+}
+
+.input-wrapper label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.settings-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--text-dark);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.settings-input:focus {
+  border-color: #0066FF;
+}
+
+body.dark-theme .settings-input {
+  border-color: #334155;
+}
+
+body.dark-theme .settings-input:focus {
+  border-color: var(--green);
+}
+
+.settings-text h4 {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.settings-text p {
+  font-size: 12px;
+  color: var(--text-gray);
+}
+
+/* Settings Buttons */
+.settings-btn-outline,
+.settings-btn-solid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.settings-btn-outline svg,
+.settings-btn-solid svg {
+  width: 14px;
+  height: 14px;
+}
+
+.settings-btn-outline {
+  background: transparent;
+  border: 1px solid #E2E8F0;
+  color: #0066FF;
+}
+
+.settings-btn-outline svg {
+  stroke: #0066FF;
+}
+
+body.dark-theme .settings-btn-outline {
+  border: 1px solid #334155;
+  color: var(--green);
+}
+
+body.dark-theme .settings-btn-outline svg {
+  stroke: var(--green);
+}
+
+.settings-btn-solid {
+  background: #0066FF;
+  border: 1px solid #0066FF;
+  color: #FFFFFF;
+}
+
+.settings-btn-solid svg {
+  stroke: #FFFFFF;
+}
+
+body.dark-theme .settings-btn-solid {
+  background: var(--green);
+  border: 1px solid var(--green);
+}
+
+.connect-new-btn {
+  margin-top: 16px;
+}
+
+/* Broker Connections */
+.broker-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.broker-row:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.broker-info h4 {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.broker-info p {
+  font-size: 12px;
+  color: var(--text-gray);
+}
+
+.broker-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.broker-status {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.broker-status.active {
+  color: var(--green);
+}
+
+.broker-status.inactive {
+  color: #F59E0B;
+}
+
+/* Notifications */
+.sub-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 24px 0 16px 0;
+}
+
+.notification-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-dark);
+}
+
+.notification-info svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-gray);
+}
+
+.broker-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

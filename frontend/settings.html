@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nextun - Dashboard</title>
+  <title>Nextun - Settings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -14,7 +14,6 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <!-- Nextun Logo and Text -->
       <div class="brand">
         <img src="sidebar_logo.png" alt="Nextun Logo" class="brand-icon" id="sidebar-logo-img" style="width: auto; height: 36px;" />
         <span class="brand-text">Nextun</span>
@@ -22,7 +21,7 @@
     </div>
 
         <nav class="sidebar-nav">
-      <a href="dashboard.html" class="nav-item active">
+      <a href="dashboard.html" class="nav-item">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
         <span>Dashboard</span>
       </a>
@@ -59,7 +58,7 @@
         </svg>
         <span>Pricing</span>
       </a>
-      <a href="settings.html" class="nav-item">
+      <a href="settings.html" class="nav-item active">
         <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <mask id="mask0_168_1099" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="20" height="20">
         <rect width="20" height="20" fill="#D9D9D9"/>
@@ -85,7 +84,7 @@
     
     <!-- Top Header -->
     <header class="top-nav">
-      <h1 class="page-title">Dashboard</h1>
+      <h1 class="page-title">Settings</h1>
       <div class="top-actions">
         <div class="date-time">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
@@ -102,229 +101,193 @@
       </div>
     </header>
 
-    <!-- Dashboard Grid -->
-    <div class="dashboard-grid">
+    <div class="settings-container">
       
-      <!-- Top Row Cards -->
-      <div class="top-cards-row">
-        <!-- Today's P&L -->
-        <div class="metric-card bg-gradient-blue">
-          <div class="card-header">
-            <h3>Today's P&L</h3>
-            <svg class="card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <mask id="mask0_160_397" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
-            <rect width="24" height="24" fill="#D9D9D9"/>
-            </mask>
-            <g mask="url(#mask0_160_397)">
-            <path d="M3.4 18L2 16.6L7.3 11.3C7.88333 10.7167 8.59167 10.425 9.425 10.425C10.2583 10.425 10.9667 10.7167 11.55 11.3L12.7 12.45C12.9 12.65 13.1375 12.75 13.4125 12.75C13.6875 12.75 13.925 12.65 14.125 12.45L18.575 8H16V6H22V12H20V9.425L15.525 13.875C14.9417 14.4583 14.2333 14.75 13.4 14.75C12.5667 14.75 11.8583 14.4583 11.275 13.875L10.1 12.7C9.91667 12.5167 9.68333 12.425 9.4 12.425C9.11667 12.425 8.88333 12.5167 8.7 12.7L3.4 18Z" fill="#4D4D4D"/>
-            </g>
-            </svg>
-          </div>
-          <div class="card-body">
-            <h2 class="text-green" id="metric-todays-pnl">+ ₹0.00</h2>
-            <p class="subtitle" id="metric-todays-pnl-sub">from yesterday</p>
-          </div>
-        </div>
-
-        <!-- Total P&L -->
-        <div class="metric-card bg-gradient-light-blue">
-          <div class="card-header">
-            <h3>Total P&L</h3>
-            <svg class="card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <mask id="mask0_160_409" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
-            <rect width="24" height="24" fill="#D9D9D9"/>
-            </mask>
-            <g mask="url(#mask0_160_409)">
-            <path d="M8 13.65V6H11V13.65L9.5 12.25L8 13.65ZM13 15.15V2H16V12.15L13 15.15ZM3 18.6V10H6V15.6L3 18.6ZM3 21.05L9.45 14.6L13 17.65L18.6 12.05H17V10.05H22V15.05H20V13.45L13.1 20.35L9.55 17.3L5.8 21.05H3Z" fill="#4D4D4D"/>
-            </g>
-            </svg>
-          </div>
-          <div class="card-body">
-            <h2 class="text-red" id="metric-total-pnl">- ₹0.00</h2>
-            <p class="subtitle" id="metric-total-pnl-sub">Lifetime P&L</p>
-          </div>
-        </div>
-
-        <!-- Open Positions -->
-        <div class="metric-card bg-gradient-light-blue">
-          <div class="card-header">
-            <h3>Open Positions</h3>
-            <svg class="card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <mask id="mask0_160_416" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
-            <rect width="24" height="24" fill="#D9D9D9"/>
-            </mask>
-            <g mask="url(#mask0_160_416)">
-            <path d="M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V3H5V19H21V21H5ZM6 18V9H10V18H6ZM11 18V4H15V18H11ZM16 18V13H20V18H16Z" fill="#4D4D4D"/>
-            </g>
-            </svg>
-          </div>
-          <div class="card-body">
-            <h2 class="text-dark" id="metric-open-positions">0</h2>
-            <p class="subtitle" id="metric-open-positions-sub">Active trades</p>
-          </div>
-        </div>
-
-        <!-- Available Margin -->
-        <div class="metric-card bg-gradient-blue">
-          <div class="card-header">
-            <h3>Available Margin</h3>
-            <svg class="card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <mask id="mask0_160_424" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
-            <rect width="24" height="24" fill="#D9D9D9"/>
-            </mask>
-            <g mask="url(#mask0_160_424)">
-            <path d="M22 6V18C22 18.55 21.8042 19.0208 21.4125 19.4125C21.0208 19.8042 20.55 20 20 20H4C3.45 20 2.97917 19.8042 2.5875 19.4125C2.19583 19.0208 2 18.55 2 18V6C2 5.45 2.19583 4.97917 2.5875 4.5875C2.97917 4.19583 3.45 4 4 4H20C20.55 4 21.0208 4.19583 21.4125 4.5875C21.8042 4.97917 22 5.45 22 6ZM4 8H20V6H4V8ZM4 12V18H20V12H4Z" fill="#4D4D4D"/>
-            </g>
-            </svg>
-          </div>
-          <div class="card-body">
-            <h2 class="text-green" id="metric-available-margin">₹0.00</h2>
-            <p class="subtitle" id="metric-available-margin-sub">Available for trading</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Main Layout: Left Col (Broker + Strategy) | Right Col (Calendar) -->
-      <div class="main-columns">
+      <!-- Personal Information -->
+      <section class="settings-panel">
+        <h2 class="panel-section-title">Personal Information</h2>
         
-        <div class="left-column">
-          <!-- Broker Connection Card -->
-          <div class="dashboard-panel broker-panel">
-            <div class="panel-header">
-              <h2>Broker Connection</h2>
-              <p>Your Connected trading account to automate trades</p>
-            </div>
-            
-            <div class="broker-status-row">
-              <div class="broker-info">
-                <div class="broker-icon-wrapper">
-                  <!-- Light Mode SVG -->
-                  <svg class="angel-one-light" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="24" cy="24" r="24" fill="#EEF6FF"/>
-                    <mask id="mask0_160_430" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="12" y="12" width="24" height="24">
-                    <rect x="12" y="12" width="24" height="24" fill="#D9D9D9"/>
-                    </mask>
-                    <g mask="url(#mask0_160_430)">
-                    <path d="M17 29V22H19V29H17ZM23 29V22H25V29H23ZM14 33V31H34V33H14ZM29 29V22H31V29H29ZM14 20V18L24 13L34 18V20H14ZM18.45 18H29.55L24 15.25L18.45 18Z" fill="#081030"/>
-                    </g>
-                  </svg>
-                  
-                  <!-- Dark Mode SVG -->
-                  <svg class="angel-one-dark" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
-                    <circle cx="24" cy="24" r="24" fill="#458A99"/>
-                    <mask id="mask0_160_1507" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="12" y="12" width="24" height="24">
-                    <rect x="12" y="12" width="24" height="24" fill="#D9D9D9"/>
-                    </mask>
-                    <g mask="url(#mask0_160_1507)">
-                    <path d="M17 29V22H19V29H17ZM23 29V22H25V29H23ZM14 33V31H34V33H14ZM29 29V22H31V29H29ZM14 20V18L24 13L34 18V20H14ZM18.45 18H29.55L24 15.25L18.45 18Z" fill="#F8FAFC"/>
-                    </g>
-                  </svg>
-                </div>
-                <div>
-                  <h4>Angel One</h4>
-                  <span>Last sync: 5 mins ago</span>
-                </div>
-              </div>
-              <span class="status-badge active">Active</span>
-            </div>
-
-            <div class="broker-metrics">
-              <div class="metric">
-                <span class="lbl">Available Funds</span>
-                <span class="val" id="broker-available-funds">₹75,000.00</span>
-              </div>
-              <div class="metric">
-                <span class="lbl">Margin Used</span>
-                <span class="val" id="broker-margin-used">₹40,000.00</span>
-              </div>
-            </div>
-
-            <button class="btn-outline" id="broker-connect-btn">Connect Broker</button>
+        <div class="settings-group">
+          <div class="settings-group-header">
+            <h3>Account Details</h3>
+            <p>Update your account information</p>
           </div>
-
-          <!-- Active Strategy Card -->
-          <div class="dashboard-panel strategy-panel">
-            <div class="panel-header">
-              <h2>Active Strategy</h2>
-              <p>Enable or disable your auto trading strategy</p>
+          
+          <div class="settings-row align-bottom">
+            <div class="input-wrapper">
+              <label>Username</label>
+              <input type="text" class="settings-input" id="setting-username" value="" />
             </div>
-
-            <div class="strategy-toggle-box">
-              <div class="strategy-info">
-                <h4>Deviation strategy</h4>
-                <span>Strategy Performance Today: +1.2%</span>
-              </div>
-              <label class="switch">
-                <input type="checkbox" checked>
-                <span class="slider round"></span>
-              </label>
+            <button class="settings-btn-outline" id="btn-save-profile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              Save
+            </button>
+          </div>
+          
+          <div class="settings-row">
+            <div class="input-wrapper full-width">
+              <label>Email</label>
+              <input type="email" class="settings-input" id="setting-email" value="" readonly style="opacity: 0.7;" />
             </div>
-
-            <div class="strategy-metrics">
-              <div class="metric">
-                <span class="lbl">Win Rate</span>
-                <span class="val">68%</span>
-              </div>
-              <div class="metric">
-                <span class="lbl">Total Trades</span>
-                <span class="val">145</span>
-              </div>
-            </div>
-
-            <button class="btn-outline">Disconnect</button>
           </div>
         </div>
 
-        <div class="right-column">
-          <!-- Monthly P&L Calendar -->
-          <div class="dashboard-panel calendar-panel">
-            <div class="panel-header">
-              <h2>Monthly P&L Calendar</h2>
-              <p>Daily profit and loss for the month</p>
+        <div class="settings-group">
+          <div class="settings-group-header">
+            <h3>Security</h3>
+            <p>Manage your account security settings</p>
+          </div>
+          
+          <div class="settings-row space-between">
+            <div class="settings-text">
+              <h4>Change Password</h4>
+              <p>Update your password regularly</p>
             </div>
+            <button class="settings-btn-outline" id="btn-change-password">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              Change
+            </button>
+          </div>
 
-            <div class="calendar-controls">
-              <button class="cal-nav"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-              <h3 id="calendar-month-year">January 2025</h3>
-              <button class="cal-nav"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+          <div class="settings-row space-between">
+            <div class="settings-text">
+              <h4>Two-Factor Authentication</h4>
+              <p>Add an extra layer of security</p>
             </div>
-
-            <div class="calendar-wrapper-box">
-              <div class="calendar-grid" id="calendar-grid">
-              <div class="cal-header">MON</div><div class="cal-header">TUE</div><div class="cal-header">WED</div><div class="cal-header">THU</div><div class="cal-header">FRI</div><div class="cal-header">SAT</div><div class="cal-header">SUN</div>
-              
-              <!-- JS will inject days here -->
-              </div>
-            </div>
-
-            <!-- Trading Summary -->
-            <div class="trading-summary">
-              <h3>Trading Summary</h3>
-              <div class="summary-metrics">
-                <div class="metric">
-                  <span class="lbl">Net P&L</span>
-                  <span class="val text-green" id="summary-net-pnl">₹0.00</span>
-                </div>
-                <div class="metric">
-                  <span class="lbl">Profit/Loss Days</span>
-                  <span class="val"><strong class="text-dark" id="summary-profit-days">0</strong> <span class="text-green">Profit |</span> <strong class="text-dark" id="summary-loss-days">0</strong> <span class="text-red">Loss</span></span>
-                </div>
-                <div class="metric">
-                  <span class="lbl">Winning</span>
-                  <span class="val" id="summary-win-rate">0%</span>
-                </div>
-              </div>
-            </div>
-
+            <label class="switch">
+              <input type="checkbox" id="toggle-2fa">
+              <span class="slider round"></span>
+            </label>
           </div>
         </div>
+      </section>
 
+      <!-- Broker Connections -->
+      <section class="settings-panel">
+        <h2 class="panel-section-title">Broker Connections</h2>
+        
+        <div class="settings-group">
+          <div class="settings-group-header">
+            <h3>Connected Brokers</h3>
+            <p>Manage your broker connections</p>
+          </div>
+
+          <div class="broker-row">
+            <div class="broker-info">
+              <h4>AngelOne</h4>
+              <p>Connected on: 15 Mar 2023</p>
+            </div>
+            <div class="broker-actions">
+              <span class="broker-status active">Active</span>
+              <button class="settings-btn-outline">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                Disconnect
+              </button>
+            </div>
+          </div>
+
+          <div class="broker-row">
+            <div class="broker-info">
+              <h4>Zerodha</h4>
+              <p>Connected on: 22 Apr 2023</p>
+            </div>
+            <div class="broker-actions">
+              <span class="broker-status inactive">InActive</span>
+              <button class="settings-btn-solid">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Connect
+              </button>
+            </div>
+          </div>
+          
+          <button class="settings-btn-outline connect-new-btn">Connect New Broker</button>
+        </div>
+      </section>
+
+      <!-- Notification Settings -->
+      <section class="settings-panel">
+        <h2 class="panel-section-title">Notification Settings</h2>
+        
+        <div class="settings-group">
+          <div class="settings-group-header">
+            <h3>Notification Preferences</h3>
+            <p>Control how you receive notifications</p>
+          </div>
+
+          <h4 class="sub-section-title">Email Notification</h4>
+          <div class="settings-row space-between">
+            <div class="notification-info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> 
+              Trade Confirmations
+            </div>
+            <label class="switch"><input type="checkbox" id="toggle-email-trade"><span class="slider round"></span></label>
+          </div>
+          <div class="settings-row space-between">
+            <div class="notification-info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> 
+              Daily Portfolio Summary
+            </div>
+            <label class="switch"><input type="checkbox" id="toggle-email-daily"><span class="slider round"></span></label>
+          </div>
+          <div class="settings-row space-between">
+            <div class="notification-info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> 
+              Strategy Performance Updates
+            </div>
+            <label class="switch"><input type="checkbox" id="toggle-email-strategy"><span class="slider round"></span></label>
+          </div>
+
+          <h4 class="sub-section-title">Push Notifications</h4>
+          <div class="settings-row space-between">
+            <div class="notification-info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg> 
+              Trade Executions
+            </div>
+            <label class="switch"><input type="checkbox" id="toggle-push-trade"><span class="slider round"></span></label>
+          </div>
+          <div class="settings-row space-between">
+            <div class="notification-info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg> 
+              Price Alerts
+            </div>
+            <label class="switch"><input type="checkbox" id="toggle-push-price"><span class="slider round"></span></label>
+          </div>
+          <div class="settings-row space-between">
+            <div class="notification-info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg> 
+              Market News
+            </div>
+            <label class="switch"><input type="checkbox" id="toggle-push-news"><span class="slider round"></span></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Change Password Modal -->
+      <div class="modal-overlay" id="password-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+          <div class="modal-header">
+            <h2>Change Password</h2>
+            <button class="close-modal" id="close-password-modal" style="background: none; border: none; cursor: pointer; color: var(--text-gray);">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+          <div class="modal-body" style="padding: 20px;">
+            <div class="input-wrapper" style="margin-bottom: 15px; width: 100%;">
+              <label>Current Password</label>
+              <input type="password" class="settings-input" id="current-password-input" />
+            </div>
+            <div class="input-wrapper" style="margin-bottom: 25px; width: 100%;">
+              <label>New Password</label>
+              <input type="password" class="settings-input" id="new-password-input" />
+            </div>
+            <button class="settings-btn-outline" id="submit-password-btn" style="width: 100%; text-align: center; justify-content: center; background: var(--green); color: white; border: none;">Update Password</button>
+          </div>
+        </div>
       </div>
 
     </div>
-
   </main>
-
-  <script src="dashboard.js"></script>
+  
+  <script src="settings.js"></script>
 </body>
 </html>

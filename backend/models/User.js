@@ -27,6 +27,30 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  activeStrategy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Strategy',
+    default: null
+  },
+  username: {
+    type: String,
+    default: function() {
+      // Default to email prefix if not provided
+      return this.email.split('@')[0];
+    }
+  },
+  is2FAEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  notifications: {
+    emailTradeConfirmations: { type: Boolean, default: true },
+    emailDailySummary: { type: Boolean, default: false },
+    emailStrategyUpdates: { type: Boolean, default: true },
+    pushTradeExecutions: { type: Boolean, default: true },
+    pushPriceAlerts: { type: Boolean, default: true },
+    pushMarketNews: { type: Boolean, default: true },
+  }
 }, {
   timestamps: true
 });
