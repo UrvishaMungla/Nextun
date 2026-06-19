@@ -178,11 +178,26 @@
               <p>Connected on: 15 Mar 2023</p>
             </div>
             <div class="broker-actions">
-              <span class="broker-status active">Active</span>
-              <button class="settings-btn-outline">
+              <span class="broker-status active" id="angelone-status">Active</span>
+              <button class="settings-btn-outline" id="btn-angelone-toggle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
                 Disconnect
               </button>
+            </div>
+          </div>
+
+          <div class="broker-row">
+            <div class="broker-info">
+              <!-- Inline styling for Exness logo text -->
+              <h4 style="color: #ffc800; font-weight: 800; font-style: italic; letter-spacing: -1px; margin: 0; padding-right: 15px;">exness</h4>
+              <div class="broker-details">
+                <span class="broker-id">MT5-Real (Not Connected)</span>
+                <span class="broker-last-sync">--</span>
+              </div>
+            </div>
+            <div class="broker-actions">
+              <span class="broker-status inactive" id="exness-status">InActive</span>
+              <button class="settings-btn-outline" id="btn-exness-toggle" style="border-color: #ffc800; color: #ffc800;">Connect</button>
             </div>
           </div>
 

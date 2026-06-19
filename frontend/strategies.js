@@ -33,16 +33,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const lightBtn = themeBtns[0];
     const darkBtn = themeBtns[1];
 
+    // Check localStorage for saved theme on load
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark-theme');
+      darkBtn.classList.add('active');
+      lightBtn.classList.remove('active');
+    }
+
     lightBtn.addEventListener('click', () => {
       document.body.classList.remove('dark-theme');
       lightBtn.classList.add('active');
       darkBtn.classList.remove('active');
+      localStorage.setItem('theme', 'light');
     });
 
     darkBtn.addEventListener('click', () => {
       document.body.classList.add('dark-theme');
       darkBtn.classList.add('active');
       lightBtn.classList.remove('active');
+      localStorage.setItem('theme', 'dark');
     });
   }
 

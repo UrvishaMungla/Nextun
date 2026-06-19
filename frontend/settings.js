@@ -89,6 +89,53 @@ document.addEventListener('DOMContentLoaded', () => {
           if (toggles.pushPriceAlerts) toggles.pushPriceAlerts.checked = user.notifications.pushPriceAlerts;
           if (toggles.pushMarketNews) toggles.pushMarketNews.checked = user.notifications.pushMarketNews;
         }
+
+        // Set Mutually Exclusive Broker Connection UI state
+        const btnExnessToggle = document.getElementById('btn-exness-toggle');
+        const exnessStatus = document.getElementById('exness-status');
+        const btnAngelOneToggle = document.getElementById('btn-angelone-toggle');
+        const angelOneStatus = document.getElementById('angelone-status');
+
+        if (btnExnessToggle && exnessStatus && btnAngelOneToggle && angelOneStatus) {
+          if (user.isExnessConnected) {
+            // Exness is Active
+            btnExnessToggle.textContent = 'Disconnect';
+            btnExnessToggle.style.borderColor = '#ff3333';
+            btnExnessToggle.style.color = '#ff3333';
+            exnessStatus.textContent = 'Active';
+            exnessStatus.className = 'broker-status active';
+
+            // AngelOne is InActive
+            btnAngelOneToggle.innerHTML = 'Connect';
+            btnAngelOneToggle.style.borderColor = '#0066ff';
+            btnAngelOneToggle.style.color = '#0066ff';
+            angelOneStatus.textContent = 'InActive';
+            angelOneStatus.className = 'broker-status inactive';
+          } else {
+            // Exness is InActive
+            btnExnessToggle.textContent = 'Connect';
+            btnExnessToggle.style.borderColor = '#ffc800';
+            btnExnessToggle.style.color = '#ffc800';
+            exnessStatus.textContent = 'InActive';
+            exnessStatus.className = 'broker-status inactive';
+
+            if (user.isAngelOneConnected) {
+              // AngelOne is Active
+              btnAngelOneToggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: 6px;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg> Disconnect`;
+              btnAngelOneToggle.style.borderColor = '#ff3333';
+              btnAngelOneToggle.style.color = '#ff3333';
+              angelOneStatus.textContent = 'Active';
+              angelOneStatus.className = 'broker-status active';
+            } else {
+              // AngelOne is InActive
+              btnAngelOneToggle.innerHTML = 'Connect';
+              btnAngelOneToggle.style.borderColor = '#0066ff';
+              btnAngelOneToggle.style.color = '#0066ff';
+              angelOneStatus.textContent = 'InActive';
+              angelOneStatus.className = 'broker-status inactive';
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -210,6 +257,65 @@ document.addEventListener('DOMContentLoaded', () => {
         alert("An error occurred while updating the password.");
       }
       submitPasswordBtn.textContent = 'Update Password';
+    });
+  }
+
+  // 5. Exness Disconnect Logic
+  const btnExnessToggle = document.getElementById('btn-exness-toggle');
+  const exnessStatus = document.getElementById('exness-status');
+  const angelOneStatus = document.getElementById('angelone-status');
+
+  if (btnExnessToggle) {
+    btnExnessToggle.addEventListener('click', async () => {
+      if (btnExnessToggle.textContent.trim() === 'Connect') {
+        window.location.href = 'signup.html';
+        return;
+      }
+
+      btnExnessToggle.textContent = 'Disconnecting...';
+      btnExnessToggle.disabled = true;
+
+      try {
+        const res = await fetch('http://localhost:5000/api/exness/disconnect', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          btnExnessToggle.textContent = 'Connect';
+          btnExnessToggle.disabled = false;
+          exnessStatus.textContent = 'InActive';
+          exnessStatus.className = 'broker-status inactive';
+          
+          // Re-fetch settings to automatically toggle AngelOne back to Active
+          fetchSettings();
+          
+          alert('Exness account disconnected securely.');
+        } else {
+          alert('Failed to disconnect: ' + data.message);
+          btnExnessToggle.textContent = 'Disconnect';
+          btnExnessToggle.disabled = false;
+        }
+      } catch (err) {
+        console.error('Error disconnecting Exness:', err);
+        alert('Server error: ' + err.message);
+        btnExnessToggle.textContent = 'Disconnect';
+        btnExnessToggle.disabled = false;
+      }
+    });
+  }
+
+  // 6. AngelOne Toggle Logic
+  const btnAngelOneToggleGlobal = document.getElementById('btn-angelone-toggle');
+  if (btnAngelOneToggleGlobal) {
+    btnAngelOneToggleGlobal.addEventListener('click', () => {
+      if (btnAngelOneToggleGlobal.textContent.trim() === 'Connect') {
+        window.location.href = 'signup.html';
+      } else {
+        // Disconnect logic for AngelOne can be added here in the future
+        alert('To disconnect AngelOne, please revoke access from your broker portal.');
+      }
     });
   }
 

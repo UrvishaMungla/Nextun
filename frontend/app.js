@@ -420,3 +420,78 @@ connectForm.addEventListener('submit', async (e) => {
     angelSubmitBtn.disabled = false;
   }
 });
+
+  // ════════════════════════════
+  // CONNECT EXNESS MODAL
+  // ════════════════════════════
+  const exnessConnectBtn = document.getElementById('btn-connect-exness');
+  const exnessModal = document.getElementById('connect-exness-modal');
+  const closeExnessModalBtn = document.getElementById('close-exness-modal');
+  const exnessForm = document.getElementById('exness-connect-form');
+  const exnessMessage = document.getElementById('exness-connect-message');
+  const exnessSubmitBtn = document.getElementById('exness-submit-btn');
+
+  if (exnessConnectBtn && exnessModal) {
+    exnessConnectBtn.addEventListener('click', () => {
+      exnessModal.style.display = 'flex';
+      exnessMessage.style.display = 'none';
+    });
+
+    closeExnessModalBtn.addEventListener('click', () => {
+      exnessModal.style.display = 'none';
+    });
+
+    // Close modal if clicking outside
+    window.addEventListener('click', (e) => {
+      if (e.target === exnessModal) {
+        exnessModal.style.display = 'none';
+      }
+    });
+
+    exnessForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const accountId = document.getElementById('exness-account-id').value;
+      const password = document.getElementById('exness-password').value;
+      const server = document.getElementById('exness-server').value;
+
+      exnessSubmitBtn.textContent = 'Connecting...';
+      exnessSubmitBtn.disabled = true;
+      exnessMessage.style.display = 'none';
+
+      try {
+        const res = await fetch('http://localhost:5000/api/exness/connect', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('nextunToken')}`
+          },
+          body: JSON.stringify({ accountId, password, server })
+        });
+        
+        const data = await res.json();
+        exnessMessage.style.display = 'block';
+
+        if (data.success) {
+          exnessMessage.style.color = '#00b852';
+          exnessMessage.textContent = 'Successfully Connected!';
+          exnessSubmitBtn.textContent = 'Connected';
+          setTimeout(() => {
+            window.location.href = 'dashboard.html';
+          }, 1500);
+        } else {
+          exnessMessage.style.color = '#ff4d4d';
+          exnessMessage.textContent = data.message || 'Connection failed.';
+          exnessSubmitBtn.textContent = 'Connect Account';
+          exnessSubmitBtn.disabled = false;
+        }
+      } catch (error) {
+        console.error('Error connecting Exness:', error);
+        exnessMessage.style.display = 'block';
+        exnessMessage.style.color = '#ff4d4d';
+        exnessMessage.textContent = 'Server Error. Try again.';
+        exnessSubmitBtn.textContent = 'Connect Account';
+        exnessSubmitBtn.disabled = false;
+      }
+    });
+  }

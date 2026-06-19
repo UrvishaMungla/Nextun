@@ -197,7 +197,7 @@
             
             <div class="broker-status-row">
               <div class="broker-info">
-                <div class="broker-icon-wrapper">
+                <div class="broker-icon-wrapper" id="dashboard-broker-logo-box">
                   <!-- Light Mode SVG -->
                   <svg class="angel-one-light" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="24" cy="24" r="24" fill="#EEF6FF"/>
@@ -221,7 +221,7 @@
                   </svg>
                 </div>
                 <div>
-                  <h4>Angel One</h4>
+                  <h4 id="dashboard-broker-name">Angel One</h4>
                   <span>Last sync: 5 mins ago</span>
                 </div>
               </div>
@@ -251,27 +251,27 @@
 
             <div class="strategy-toggle-box">
               <div class="strategy-info">
-                <h4>Deviation strategy</h4>
-                <span>Strategy Performance Today: +1.2%</span>
+                <h4 id="dash-strategy-name">No Active Strategy</h4>
+                <span id="dash-strategy-desc">Navigate to the Strategies page to enable one.</span>
               </div>
-              <label class="switch">
-                <input type="checkbox" checked>
+              <label class="switch" id="dash-strategy-switch" style="display:none;">
+                <input type="checkbox" checked disabled>
                 <span class="slider round"></span>
               </label>
             </div>
 
-            <div class="strategy-metrics">
+            <div class="strategy-metrics" id="dash-strategy-metrics" style="display:none;">
               <div class="metric">
-                <span class="lbl">Win Rate</span>
-                <span class="val">68%</span>
+                <span class="lbl">Success Rate</span>
+                <span class="val" id="dash-strategy-winrate">-</span>
               </div>
               <div class="metric">
-                <span class="lbl">Total Trades</span>
-                <span class="val">145</span>
+                <span class="lbl">Risk/Reward</span>
+                <span class="val" id="dash-strategy-rr">-</span>
               </div>
             </div>
 
-            <button class="btn-outline">Disconnect</button>
+            <button class="btn-outline" onclick="window.location.href='strategies.html'">Manage Strategies</button>
           </div>
         </div>
 

@@ -707,34 +707,35 @@ body {
 /* White card wrapper */
 .broker-card {
   background: #fff;
-  border: 1.5px solid #D9D9D9; /* exact Figma spec: 1.5px */
-  border-radius: 14px;         /* exact Figma spec: 14px */
-  width: 600px;                /* exact Figma spec: 600px */
-  height: 355px;               /* exact Figma spec: 355px */
-  margin: 0 auto 32px auto;    /* centers it perfectly (left: 80px) */
-  padding: 40px 0 0 0;         /* exact Figma top margin for logo */
+  border: 1.5px solid #D9D9D9;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 340px;
+  min-height: 340px;
+  margin: 0 auto;
+  padding: 40px 15px 35px 15px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 /* Angel One logo image */
 .broker-logo {
-  width: 454px;   /* exact Figma spec */
-  height: 94px;   /* exact Figma spec */
+  width: 80%;
+  max-width: 220px;
+  height: auto;
   object-fit: contain;
 }
 
 /* "Login with Angel One via Smart API" text */
 .broker-card-label {
-  width: 293px;   /* exact Figma spec */
-  height: 66px;   /* exact Figma spec */
-  margin-top: 41px; /* 175px (label top) - 134px (logo bottom) = 41px */
+  width: 90%;
+  margin-top: 15px;
   font-family: 'Merriweather', serif;
   font-weight: 400;
-  font-size: 23px;
+  font-size: 18px;
   line-height: 1.43;
   letter-spacing: -0.01em;
   text-align: center;
@@ -746,17 +747,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #01C26C; /* exact Figma spec */
+  background: #01C26C;
   color: #fff;
   font-family: 'Merriweather', serif;
   font-weight: 400;
   font-size: 16px;
   border: none;
-  border-radius: 28px; /* exact Figma spec */
-  width: 419px;    /* exact Figma spec */
-  height: 56px;    /* exact Figma spec */
-  margin-top: 18px; /* 259px (button top) - 241px (label bottom) = 18px */
-  padding: 20px 40px; /* exact Figma spec padding */
+  border-radius: 28px;
+  width: 80%;
+  max-width: 280px;
+  height: 50px;
+  margin-top: 15px;
+  padding: 10px 20px;
   cursor: pointer;
   box-shadow: 0 4px 14px var(--green-shadow);
   transition: transform .15s, background .15s, box-shadow .15s;

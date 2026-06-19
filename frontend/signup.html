@@ -228,19 +228,25 @@
       <!-- Subtitle -->
       <p class="broker-subtitle">To begin auto trading, connect your broker account to our platform.</p>
 
-      <!-- Angel One broker card -->
-      <div class="broker-card" id="angel-one-card">
+      <!-- Broker Cards Container -->
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 1.5rem;">
+        
+        <!-- Angel One broker card -->
+        <div class="broker-card" id="angel-one-card" style="flex: 1; min-width: 200px;">
+          <img src="Angle_One_Logo.png" alt="Angel One Logo" class="broker-logo" id="angel-one-logo" />
+          <p class="broker-card-label">Login with Angel One via<br/>Smart API</p>
+          <button type="button" class="btn-connect" id="btn-connect-angel">Connect</button>
+        </div><!-- /.broker-card -->
 
-        <!-- Logo (user will place Angle_One_Logo.png in the same folder) -->
-        <img src="Angle_One_Logo.png" alt="Angel One Logo" class="broker-logo" id="angel-one-logo" />
+        <!-- Exness broker card -->
+        <div class="broker-card" id="exness-card" style="flex: 1; min-width: 200px;">
+          <!-- Exness text logo since we don't have the image file right now -->
+          <h2 style="color: #ffc800; margin: 15px 0; font-weight: 800; font-style: italic; letter-spacing: -1px; font-size: 28px;">exness</h2>
+          <p class="broker-card-label">Login with Exness via<br/>MT4 / MT5</p>
+          <button type="button" class="btn-connect" id="btn-connect-exness">Connect</button>
+        </div><!-- /.broker-card -->
 
-        <!-- Login with Angel One text -->
-        <p class="broker-card-label">Login with Angel One via<br/>Smart API</p>
-
-        <!-- Connect button -->
-        <button type="button" class="btn-connect" id="btn-connect-angel">Connect</button>
-
-      </div><!-- /.broker-card -->
+      </div>
 
       <!-- Security disclaimer -->
       <p class="broker-disclaimer">
@@ -281,6 +287,35 @@
           <button type="submit" class="btn btn--primary" id="angel-submit-btn" style="width: 100%; margin-top: 1rem; padding: 12px; border-radius: 8px; background: #00b852; color: white; border: none; font-weight: 600; cursor: pointer;">Connect Account</button>
         </form>
         <div id="connect-message" style="margin-top: 15px; font-size: 0.9rem; text-align: center; display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connect Exness Modal -->
+  <div class="modal-overlay" id="connect-exness-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Connect Exness (MT4/MT5)</h2>
+        <button class="close-modal" id="close-exness-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 1.5rem; color: var(--text-gray); font-size: 0.9rem;">Please enter your MetaTrader credentials to securely connect your Exness account for automated trading.</p>
+        <form id="exness-connect-form">
+          <div class="form-group">
+            <label for="exness-account-id">Account ID / Login</label>
+            <input type="text" id="exness-account-id" required placeholder="e.g. 12345678">
+          </div>
+          <div class="form-group">
+            <label for="exness-password">Password</label>
+            <input type="password" id="exness-password" required placeholder="MetaTrader Password">
+          </div>
+          <div class="form-group">
+            <label for="exness-server">Server</label>
+            <input type="text" id="exness-server" required placeholder="e.g. Exness-Real">
+          </div>
+          <button type="submit" class="btn btn--primary" id="exness-submit-btn" style="width: 100%; margin-top: 1rem; padding: 12px; border-radius: 8px; background: #ffc800; color: #111; border: none; font-weight: 600; cursor: pointer;">Connect Account</button>
+        </form>
+        <div id="exness-connect-message" style="margin-top: 15px; font-size: 0.9rem; text-align: center; display: none;"></div>
       </div>
     </div>
   </div>

@@ -19,6 +19,7 @@ app.use('/api/pnl', require('./routes/pnl'));
 app.use('/api/strategies', require('./routes/strategies'));
 app.use('/api/user', require('./routes/userRoutes'));
 app.use('/api/trades', require('./routes/tradeRoutes'));
+app.use('/api/exness', require('./routes/exnessRoutes'));
 
 // Root route
 app.get('/', (req, res) => {

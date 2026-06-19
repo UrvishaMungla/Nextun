@@ -62,20 +62,51 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  // --- Pagination State ---
+  let allTrades = [];
+  let currentPage = 1;
+  const itemsPerPage = 12;
+
   async function fetchTrades() {
     try {
-      const res = await fetch('http://localhost:5000/api/trades', {
+      const token = localStorage.getItem('nextunToken');
+      if (!token) return;
+
+      const filterVal = document.getElementById('filter-select')?.value || 'ALL';
+      const sortVal = document.getElementById('sort-select')?.value || 'DATE_DESC';
+
+      // Auto-sync Exness trades
+      await fetch('http://localhost:5000/api/trades/seed', {
+        method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const res = await fetch(`http://localhost:5000/api/trades?filter=${filterVal}&sort=${sortVal}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       const data = await res.json();
       
       if (data.success) {
+        allTrades = data.data || [];
+        currentPage = 1; // Reset to page 1 on new fetch
         renderMetrics(data.metrics);
-        renderTable(data.data);
+        renderPaginatedTable();
       }
     } catch (error) {
       console.error('Failed to fetch trades:', error);
     }
+  }
+
+  const filterSelect = document.getElementById('filter-select');
+  const sortSelect = document.getElementById('sort-select');
+  
+  if (filterSelect) {
+    filterSelect.addEventListener('change', fetchTrades);
+  }
+  if (sortSelect) {
+    sortSelect.addEventListener('change', fetchTrades);
   }
 
   function renderMetrics(metrics) {
@@ -89,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (avgWinLossEl) avgWinLossEl.textContent = metrics.avgWinLoss;
     
     if (totalPnlEl) {
-      const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+      const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
       totalPnlEl.textContent = formatCurrency(metrics.totalPnl);
       totalPnlEl.className = metrics.totalPnl >= 0 ? 'tm-val text-green' : 'tm-val text-red';
     }
@@ -108,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const typeClass = trade.type === 'BUY' ? 'text-green' : 'text-red';
         const pnlClass = trade.pnl >= 0 ? 'text-green' : 'text-red';
         const pnlSign = trade.pnl >= 0 ? '+' : '';
-        const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+        const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
 
         html += `
           <tr>
@@ -126,6 +157,73 @@ document.addEventListener('DOMContentLoaded', () => {
     
     tbody.innerHTML = html;
   }
+
+  function renderPaginatedTable() {
+    const totalItems = allTrades.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    
+    // Safety check
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+    
+    // Slice data
+    const pageTrades = allTrades.slice(startIndex, endIndex);
+    
+    // Update Info Text
+    const infoEl = document.getElementById('pagination-info');
+    if (infoEl) {
+      if (totalItems === 0) {
+        infoEl.textContent = 'Showing 0 to 0 of 0 trades';
+      } else {
+        infoEl.textContent = `Showing ${startIndex + 1} to ${endIndex} of ${totalItems} trades`;
+      }
+    }
+
+    // Render Table
+    renderTable(pageTrades);
+
+    // Render Controls
+    renderPaginationControls(totalPages);
+  }
+
+  function renderPaginationControls(totalPages) {
+    const controlsEl = document.getElementById('pagination-controls');
+    if (!controlsEl) return;
+    
+    if (totalPages <= 1) {
+      controlsEl.innerHTML = '';
+      return;
+    }
+
+    let html = '';
+    
+    // Prev Button
+    html += `<button class="page-btn" ${currentPage === 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="window.changePage(${currentPage - 1})"`}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>`;
+
+    // Page Numbers
+    for (let i = 1; i <= totalPages; i++) {
+      // Logic for showing ellipsis could be added here for many pages, but simple 1-N is fine for now
+      html += `<button class="page-btn ${currentPage === i ? 'active' : ''}" onclick="window.changePage(${i})">${i}</button>`;
+    }
+
+    // Next Button
+    html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : `onclick="window.changePage(${currentPage + 1})"`}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>`;
+
+    controlsEl.innerHTML = html;
+  }
+
+  // Global function for onclick handlers
+  window.changePage = (page) => {
+    currentPage = page;
+    renderPaginatedTable();
+  };
 
   fetchTrades();
 });

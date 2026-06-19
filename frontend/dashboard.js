@@ -33,16 +33,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const lightBtn = themeBtns[0];
     const darkBtn = themeBtns[1];
 
+    // Check localStorage for saved theme on load
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark-theme');
+      darkBtn.classList.add('active');
+      lightBtn.classList.remove('active');
+    }
+
     lightBtn.addEventListener('click', () => {
       document.body.classList.remove('dark-theme');
       lightBtn.classList.add('active');
       darkBtn.classList.remove('active');
+      localStorage.setItem('theme', 'light');
     });
 
     darkBtn.addEventListener('click', () => {
       document.body.classList.add('dark-theme');
       darkBtn.classList.add('active');
       lightBtn.classList.remove('active');
+      localStorage.setItem('theme', 'dark');
     });
   }
 
@@ -50,53 +59,122 @@ document.addEventListener('DOMContentLoaded', () => {
   async function initDashboard() {
     try {
       const token = localStorage.getItem('nextunToken');
-      const res = await fetch('http://localhost:5000/api/angelone/dashboard', {
+      
+      // 1. Fetch User Profile to check for Exness connection
+      const userRes = await fetch('http://localhost:5000/api/user/settings', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const data = await res.json();
+      const userData = await userRes.json();
       
-      if (data.success && data.data) {
-        const d = data.data;
-        
-        // Format Currency Helper
-        const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
-        
-        // 1. Available Funds & Margin
-        if (d.rms) {
-          const funds = parseFloat(d.rms.availablecash || 0);
-          const margin = parseFloat(d.rms.utilisedmargin || 0);
-          
-          document.getElementById('broker-available-funds').textContent = formatCurrency(funds);
-          document.getElementById('broker-margin-used').textContent = formatCurrency(margin);
-          
-          // Also update the big "Available Margin" card at top right
-          const topMarginElem = document.getElementById('metric-available-margin');
-          if(topMarginElem) {
-             topMarginElem.textContent = formatCurrency(funds);
-          }
-        }
-        
-        // 2. Today's P&L, Total P&L, Open Positions
-        if (d.positions) {
-          document.getElementById('metric-todays-pnl').textContent = formatCurrency(d.positions.todaysPnl);
-          // Set color based on profit/loss
-          document.getElementById('metric-todays-pnl').className = d.positions.todaysPnl >= 0 ? 'text-green' : 'text-red';
-          
-          document.getElementById('metric-total-pnl').textContent = formatCurrency(d.positions.totalPnl);
-          document.getElementById('metric-total-pnl').className = d.positions.totalPnl >= 0 ? 'text-green' : 'text-red';
-          
-          document.getElementById('metric-open-positions').textContent = d.positions.openCount;
-        }
+      if (userData.success) {
+        const user = userData.data;
+    const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
 
-        // Change connect button state
+        if (user.isExnessConnected) {
+          // Swap UI to Exness
+          document.getElementById('dashboard-broker-name').textContent = 'Exness MT5';
+          document.getElementById('dashboard-broker-logo-box').innerHTML = '<h4 style="color: #ffc800; font-weight: 800; font-style: italic; letter-spacing: -1px; margin: 0;">exness</h4>';
+          
+          // Fetch real/dummy data from backend
+          const exnessRes = await fetch('http://localhost:5000/api/exness/dashboard', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const exnessData = await exnessRes.json();
+          
+          if (exnessData.success && exnessData.data) {
+            const formatUSD = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+            
+            document.getElementById('broker-available-funds').textContent = formatUSD(exnessData.data.balance);
+            document.getElementById('broker-margin-used').textContent = formatUSD(exnessData.data.margin);
+            const topMarginElem = document.getElementById('metric-available-margin');
+            if(topMarginElem) topMarginElem.textContent = formatUSD(exnessData.data.freeMargin);
+          }
+        } else if (!user.isAngelOneConnected) {
+          // Neither is connected
+          document.getElementById('dashboard-broker-name').textContent = 'No Broker Connected';
+          document.getElementById('dashboard-broker-logo-box').innerHTML = '<h4 style="color: #94a3b8; font-weight: 600; margin: 0;">Disconnected</h4>';
+          
+          document.getElementById('broker-available-funds').textContent = formatCurrency(0);
+          document.getElementById('broker-margin-used').textContent = formatCurrency(0);
+          const topMarginElem = document.getElementById('metric-available-margin');
+          if(topMarginElem) topMarginElem.textContent = formatCurrency(0);
+        }
+      }
+      
+      // 2. Fetch Real Database Trades for P&L Analytics Engine
+      const res = await fetch('http://localhost:5000/api/trades?filter=ALL', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const tradeData = await res.json();
+      
+      if (tradeData.success && tradeData.data) {
+        const trades = tradeData.data;
+        
+        // Mathematical Aggregation Algorithm
+        let todaysPnl = 0;
+        let totalPnl = tradeData.metrics.totalPnl || 0;
+        let openCount = 0;
+        
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        trades.forEach(t => {
+           if (t.status === 'OPEN') openCount++;
+           const tradeDate = new Date(t.createdAt);
+           if (tradeDate >= today) {
+               todaysPnl += t.pnl;
+           }
+        });
+
+        // Format Currency Helper
+        const isExness = userData.success && userData.data.isExnessConnected;
+        const formatCurrency = (val) => new Intl.NumberFormat('en-US', { 
+            style: 'currency', 
+            currency: isExness ? 'USD' : 'INR' 
+        }).format(val);
+        
+        // Inject True Numbers into Dashboard UI
+        document.getElementById('metric-todays-pnl').textContent = formatCurrency(todaysPnl);
+        document.getElementById('metric-todays-pnl').className = todaysPnl >= 0 ? 'text-green' : 'text-red';
+        
+        document.getElementById('metric-total-pnl').textContent = formatCurrency(totalPnl);
+        document.getElementById('metric-total-pnl').className = totalPnl >= 0 ? 'text-green' : 'text-red';
+        
+        document.getElementById('metric-open-positions').textContent = openCount;
+
+        // Change connect button state based on actual broker
         const connectBtn = document.getElementById('broker-connect-btn');
-        if (connectBtn) {
-          connectBtn.textContent = 'Connected to AngelOne';
+        if (connectBtn && isExness) {
+          connectBtn.textContent = 'Connected to Exness';
           connectBtn.classList.remove('btn-outline');
           connectBtn.style.background = 'var(--green)';
           connectBtn.style.color = 'white';
         }
       }
+
+      // 3. Sync Active Strategy from Database
+      const stratRes = await fetch('http://localhost:5000/api/strategies', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const stratData = await stratRes.json();
+      
+      if (stratData.success && stratData.data && stratData.data.activeStrategy) {
+        // User has an active strategy
+        const activeId = stratData.data.activeStrategy;
+        // Find it in the array
+        const activeStrat = stratData.data.strategies.find(s => s._id === activeId);
+        
+        if (activeStrat) {
+          document.getElementById('dash-strategy-name').textContent = activeStrat.name;
+          document.getElementById('dash-strategy-desc').textContent = activeStrat.description;
+          document.getElementById('dash-strategy-winrate').textContent = activeStrat.successRate;
+          document.getElementById('dash-strategy-rr').textContent = activeStrat.riskReward;
+          
+          document.getElementById('dash-strategy-switch').style.display = 'block';
+          document.getElementById('dash-strategy-metrics').style.display = 'flex';
+        }
+      }
+      
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     }
@@ -142,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Update Summary Metrics
-    const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+    const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
     
     document.getElementById('summary-net-pnl').textContent = formatCurrency(netPnl);
     document.getElementById('summary-net-pnl').className = netPnl >= 0 ? 'val text-green' : 'val text-red';

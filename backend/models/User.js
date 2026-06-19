@@ -27,6 +27,22 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  exnessAccountId: {
+    type: String,
+    default: null,
+  },
+  exnessPassword: {
+    type: String,
+    default: null,
+  },
+  exnessServer: {
+    type: String,
+    default: null,
+  },
+  isExnessConnected: {
+    type: Boolean,
+    default: false,
+  },
   activeStrategy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Strategy',

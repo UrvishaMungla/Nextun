@@ -125,16 +125,22 @@
 
       <!-- Controls Toolbar -->
       <div class="trades-toolbar">
-        <div class="toolbar-left">
+        <div class="toolbar-left" style="display: flex; gap: 10px;">
           <div class="custom-select">
-            <select>
-              <option>All Trades</option>
+            <select id="filter-select" style="background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 8px; cursor: pointer;">
+              <option value="ALL" style="background: #1e293b; color: white;">All Trades</option>
+              <option value="WIN" style="background: #1e293b; color: white;">Winning Trades</option>
+              <option value="LOSS" style="background: #1e293b; color: white;">Losing Trades</option>
             </select>
           </div>
-          <button class="sort-btn">
-            Sort By
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5"></path><path d="M7 9l5-5 5 5"></path></svg>
-          </button>
+          <div class="custom-select">
+            <select id="sort-select" style="background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 8px; cursor: pointer;">
+              <option value="DATE_DESC" style="background: #1e293b; color: white;">Date (Newest)</option>
+              <option value="DATE_ASC" style="background: #1e293b; color: white;">Date (Oldest)</option>
+              <option value="PROFIT_DESC" style="background: #1e293b; color: white;">Highest Profit</option>
+              <option value="LOSS_DESC" style="background: #1e293b; color: white;">Biggest Loss</option>
+            </select>
+          </div>
         </div>
         <div class="toolbar-right">
           <button class="filter-btn">
@@ -175,16 +181,9 @@
 
       <!-- Pagination Footer -->
       <div class="trades-pagination">
-        <span class="pagination-info">Showing 1 to 8 of 80 trades</span>
-        <div class="pagination-controls">
-          <button class="page-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-          <button class="page-btn active">1</button>
-          <button class="page-btn">2</button>
-          <button class="page-btn">3</button>
-          <button class="page-btn">4</button>
-          <span class="page-ellipsis">...</span>
-          <button class="page-btn">10</button>
-          <button class="page-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        <span class="pagination-info" id="pagination-info">Showing 0 to 0 of 0 trades</span>
+        <div class="pagination-controls" id="pagination-controls">
+          <!-- JS will inject pagination buttons here -->
         </div>
       </div>
 
