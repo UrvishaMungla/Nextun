@@ -1,28 +1,49 @@
-﻿# 🚀 Nextun — AI-Powered Trading Platform
+﻿# 🚀 Nextun — AI-Powered Algorithmic Trading Platform
 
-[![Django](https://img.shields.io/badge/Django-6.0.6-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![DRF](https://img.shields.io/badge/DRF-3.17.1-red?style=for-the-badge)](https://www.django-rest-framework.org/)
+<div align="center">
+
+**A full-stack Django-based algorithmic trading platform with real-time WebSocket data, broker integrations, strategy backtesting, and a premium dark-mode UI.**
+
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Django](https://img.shields.io/badge/Django-6.0-092E20?style=for-the-badge&logo=django&logoColor=white)](https://djangoproject.com)
+[![Django REST Framework](https://img.shields.io/badge/DRF-3.17-ff1709?style=for-the-badge&logo=django&logoColor=white)](https://www.django-rest-framework.org/)
+[![Django Channels](https://img.shields.io/badge/Django_Channels-4.3-092E20?style=for-the-badge&logo=django&logoColor=white)](https://channels.readthedocs.io/)
+[![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=json-web-tokens&logoColor=white)](https://jwt.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
 
-> **Nextun** is a full-stack algorithmic trading platform built with Django REST Framework. It features a real-time trading dashboard, Double Top/Bottom pattern backtesting engine, multi-broker integration (Angel One & Exness/MT5), JWT authentication, WebSocket live feeds, and a PnL calendar — all served from a single Django backend.
+</div>
 
 ---
 
 ## 📋 Table of Contents
 
-- [✨ Features](#-features)
-- [🏗️ Architecture](#️-architecture)
-- [📁 Project Structure](#-project-structure)
-- [🛠️ Tech Stack](#️-tech-stack)
-- [⚙️ How the Backend Works](#️-how-the-backend-works)
-- [📊 How the Dashboard Works](#-how-the-dashboard-works)
-- [🧠 Strategy & Backtest Engine](#-strategy--backtest-engine)
-- [🚀 How to Run Locally](#-how-to-run-locally)
-- [🐳 Run with Docker](#-run-with-docker)
-- [📡 API Endpoints](#-api-endpoints)
-- [🌍 How to Clone](#-how-to-clone)
-- [🤝 Contributing](#-contributing)
+- [Overview](#-overview)
+- [Features](#-features)
+- [Project Architecture](#-project-architecture)
+- [Tech Stack](#-tech-stack)
+- [Database Models](#-database-models)
+- [API Endpoints](#-api-endpoints)
+- [Frontend Pages](#-frontend-pages)
+- [Broker Integrations](#-broker-integrations)
+- [Strategy Backtesting](#-strategy-backtesting)
+- [Getting Started](#-getting-started)
+- [Docker Deployment](#-docker-deployment)
+- [Environment Variables](#-environment-variables)
+- [Project Structure](#-project-structure)
+
+---
+
+## 🌟 Overview
+
+**Nextun** is a sophisticated algorithmic trading platform that connects traders to multiple brokers (Angel One and Exness), provides real-time portfolio monitoring via WebSockets, and delivers AI-driven trading strategy management with historical backtesting capabilities.
+
+The platform features:
+- 🔐 **Secure JWT-based authentication** with 2FA support
+- 📊 **Real-time dashboard** with live P&L tracking
+- 🤖 **Strategy management** with automated backtesting engine
+- 📈 **Multi-broker connectivity** (Angel One and Exness)
+- 💬 **WebSocket live updates** via Django Channels + Daphne ASGI
+- 🐳 **Docker-ready** for easy deployment
 
 ---
 
@@ -30,378 +51,429 @@
 
 | Feature | Description |
 |---|---|
-| 🔐 **JWT Authentication** | Secure register/login with access & refresh tokens |
-| 📊 **Live Dashboard** | Real-time P&L, trade metrics, and broker account overview |
-| 🧠 **Backtest Engine** | Double Top / Double Bottom pattern scanner on any forex/stock symbol |
-| 📅 **PnL Calendar** | Daily profit/loss calendar view for performance tracking |
-| 📈 **Trades Journal** | Full trade history with filter (WIN/LOSS/ALL) and sort options |
-| 🤝 **Angel One Integration** | Connect Indian broker Angel One for live trading |
-| 💱 **Exness / MT5 Integration** | Connect Exness MT5 forex broker |
-| 🔴 **WebSocket Live Feed** | Real-time price updates via Django Channels |
-| ⚙️ **User Settings** | Profile, 2FA toggle, notification preferences |
-| 💰 **Pricing Page** | Subscription plan selection |
-| 🐳 **Docker Support** | One-command deployment via Docker Compose |
+| 🔑 User Authentication | Register / Login with JWT tokens, email-based auth |
+| 📊 Live Dashboard | Real-time P&L, open trades, daily performance metrics |
+| 📅 Monthly P&L Calendar | Visual calendar showing daily profit/loss data |
+| 🤖 Strategy Engine | 4+ built-in strategies: Double Top/Bottom, EMA Crossover, RSI, MACD |
+| 🔁 Backtesting | Historical strategy simulation with win-rate and drawdown analysis |
+| 🏦 Angel One Broker | SmartAPI integration for Indian stock market trading |
+| 💹 Exness Broker | Forex broker integration for currency pair trading |
+| ⚙️ Settings Panel | Broker connection, notifications, 2FA, account management |
+| 💰 Pricing Plans | Free / Pro / Enterprise plan management UI |
+| 📱 Responsive UI | Premium dark-mode design, mobile-friendly |
+| 🔔 Notifications | JSON-stored user notifications with toggle controls |
+| 🌐 WebSocket | Live portfolio updates without page refresh |
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Project Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                         CLIENT (Browser)                             │
-│   index.html | dashboard.html | strategies.html | trades.html ...   │
-│                    Vanilla JS + Fetch API + WebSocket                │
-└────────────────────────────┬─────────────────────────────────────────┘
-                             │  HTTP / WebSocket
-                             ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                    Django + Daphne ASGI Server                       │
-│  ┌─────────────────────┐    ┌──────────────────────────────────────┐ │
-│  │   REST API (DRF)    │    │  WebSocket (Django Channels)         │ │
-│  │  /api/auth/...      │    │  ws://host/ws/prices/                │ │
-│  │  /api/trades/       │    │  consumers.py → real-time feed       │ │
-│  │  /api/strategies/   │    └──────────────────────────────────────┘ │
-│  │  /api/pnl/calendar  │                                             │
-│  │  /api/strategy/     │    ┌──────────────────────────────────────┐ │
-│  │    backtest         │    │   Strategy Backtest Engine           │ │
-│  └─────────────────────┘    │  strategy_backtest.py                │ │
-│                             │  yfinance → pattern scan → results   │ │
-│                             └──────────────────────────────────────┘ │
-└──────────────────┬───────────────────────────────────────────────────┘
-                   │
-                   ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                      SQLite / PostgreSQL                             │
-│  CustomUser | Strategy | Trade | DailyPnl                           │
-└──────────────────────────────────────────────────────────────────────┘
-```
+\\\
++------------------------------------------------------------------+
+|                        CLIENT BROWSER                            |
+|   HTML Templates + Vanilla CSS + Vanilla JS (Fetch API)          |
+|   Pages: index, dashboard, strategies, trades, settings,         |
+|           pricing, signup                                         |
++------------------------------------------------------------------+
+                       |  HTTP REST + WebSocket
+                       v
++------------------------------------------------------------------+
+|                   DAPHNE ASGI SERVER                             |
+|              (Handles HTTP + WebSocket)                          |
++------------------------------------------------------------------+
+            |                              |
+            | HTTP                         | WebSocket (ws://)
+            v                             v
++------------------------+   +----------------------------------+
+|   DJANGO REST API      |   |     DJANGO CHANNELS              |
+|                        |   |                                  |
+|  /api/register/        |   |  ws://host/ws/portfolio/         |
+|  /api/login/           |   |  PortfolioConsumer               |
+|  /api/user/            |   |  (Real-time trade and P&L)       |
+|  /api/trades/          |   +----------------------------------+
+|  /api/strategies/      |
+|  /api/backtest/        |
+|  /api/broker/connect/  |
+|  /api/settings/update/ |
++------------------------+
+            |
+            v
++------------------------------------------------------------------+
+|                    DJANGO ORM LAYER                              |
+|         Models: CustomUser, Strategy, Trade, DailyPnl            |
++------------------------------------------------------------------+
+                            |
+                            v
+                 +---------------------+
+                 |     SQLite DB        |
+                 |   (dev / local)      |
+                 |   db.sqlite3         |
+                 +---------------------+
 
----
-
-## 📁 Project Structure
-
-```
-Nextun/
-├── api/                          # Main Django app
-│   ├── models.py                 # DB models: CustomUser, Strategy, Trade, DailyPnl
-│   ├── views.py                  # REST API views (Auth, Trades, Strategies, etc.)
-│   ├── urls.py                   # URL routing for /api/*
-│   ├── serializers.py            # DRF serializers
-│   ├── consumers.py              # WebSocket consumer (real-time prices)
-│   ├── routing.py                # WebSocket URL routing
-│   ├── strategy_backtest.py      # Double Top/Bottom backtest engine
-│   ├── admin.py                  # Django admin config
-│   └── migrations/               # Database migrations
-│
-├── nextun_project/               # Django project config
-│   ├── settings.py               # Settings (DB, auth, CORS, channels)
-│   ├── urls.py                   # Root URL config
-│   ├── asgi.py                   # ASGI config (HTTP + WebSocket)
-│   └── wsgi.py                   # WSGI config
-│
-├── templates/                    # Frontend HTML pages
-│   ├── index.html                # Landing page
-│   ├── dashboard.html            # Trading dashboard
-│   ├── strategies.html           # Strategy selection & backtest
-│   ├── trades.html               # Trade journal
-│   ├── settings.html             # User settings
-│   ├── signup.html               # Register/Login page
-│   └── pricing.html              # Subscription plans
-│
-├── static/                       # Static files (CSS, JS, images)
-├── manage.py                     # Django management CLI
-├── requirements.txt              # Python dependencies
-├── Dockerfile                    # Docker image config
-├── docker-compose.yml            # Docker Compose setup
-└── .gitignore                    # Git ignore rules
-```
+External Broker APIs:
+  Angel One SmartAPI <---- api/views.py (AngelOneBrokerView)
+  Exness REST API    <---- api/views.py (ExnessBrokerView)
+\\\
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
+### Backend
+
+| Technology | Version | Purpose |
+|---|---|---|
+| Python | 3.11+ | Core language |
+| Django | 6.0.6 | Web framework |
+| Django REST Framework | 3.17.1 | RESTful API layer |
+| Django Channels | 4.3.2 | WebSocket support |
+| Daphne | 4.2.2 | ASGI server |
+| SimpleJWT | 5.5.1 | JWT authentication |
+| django-cors-headers | 4.9.0 | CORS policy management |
+| Twisted | 26.4.0 | Async networking (Channels) |
+
+### Frontend
+
+| Technology | Purpose |
 |---|---|
-| **Backend Framework** | Django 6.0.6 |
-| **REST API** | Django REST Framework 3.17.1 |
-| **Authentication** | JWT via djangorestframework-simplejwt |
-| **Real-time** | Django Channels 4.3.2 + Daphne ASGI |
-| **Database** | SQLite (dev) / PostgreSQL (prod) |
-| **Market Data** | yfinance (Yahoo Finance) |
-| **Data Processing** | pandas, numpy |
-| **CORS** | django-cors-headers |
-| **Frontend** | Vanilla HTML/CSS/JavaScript |
-| **Containerization** | Docker + Docker Compose |
+| HTML5 | Semantic page structure |
+| Vanilla CSS | Custom dark-mode design system |
+| Vanilla JavaScript | Dynamic fetch API calls, DOM manipulation |
+| WebSocket API | Real-time live updates |
 
----
+### DevOps
 
-## ⚙️ How the Backend Works
-
-The backend is a **Django ASGI application** served by **Daphne**, supporting both HTTP REST and WebSocket connections simultaneously.
-
-### Authentication Flow
-1. User calls `POST /api/auth/register` or `POST /api/auth/login`
-2. Backend returns an **access token** (JWT) and a **refresh token**
-3. Client stores the access token in `localStorage`
-4. Every subsequent request includes `Authorization: Bearer <token>`
-5. DRF's `IsAuthenticated` permission class validates the token
-6. Token can be refreshed via `POST /api/auth/refresh`
-
-### Data Models
-
-| Model | Purpose |
+| Technology | Purpose |
 |---|---|
-| `CustomUser` | Extends Django's AbstractUser; stores broker credentials (Angel One, Exness), active strategy, 2FA flag |
-| `Strategy` | Pre-seeded trading strategies with metadata (min capital, success rate, risk:reward) |
-| `Trade` | Individual trade records (symbol, type, entry/exit price, P&L, status) |
-| `DailyPnl` | Aggregated daily profit/loss per user, used for the calendar view |
+| Docker | Containerization |
+| docker-compose | Multi-service orchestration |
+| SQLite | Development database |
 
 ---
 
-## 📊 How the Dashboard Works
+## 🗄️ Database Models
 
-The **Dashboard** (`dashboard.html`) is a single-page interface that:
+### CustomUser (extends AbstractUser)
 
-1. **On load** — reads the JWT from `localStorage` and calls the backend to fetch user profile, trades summary, PnL calendar data, and active strategy details.
+\\\python
+email                 # Unique login identifier
+angelOneClientCode    # Angel One broker client code
+angelOneJwtToken      # Angel One session token
+angelOneRefreshToken  # Angel One refresh token
+isAngelOneConnected   # Broker connection flag
+exnessAccountId       # Exness account ID
+exnessPassword        # Encrypted broker password
+exnessServer          # Exness server identifier
+isExnessConnected     # Exness connection flag
+activeStrategy        # FK -> Strategy
+is2FAEnabled          # Two-factor auth toggle
+notifications         # JSONField for user alerts
+\\\
 
-2. **Broker Connection Panel** — lets users enter credentials for:
-   - **Angel One** → stores `clientCode`, marks `isAngelOneConnected = True`
-   - **Exness / MT5** → stores `accountId`, `server`, marks `isExnessConnected = True`
+### Strategy
 
-3. **Real-time Prices** — opens a WebSocket connection to `ws://host/ws/prices/`. The `consumers.py` `PriceConsumer` handles the live feed, updating prices in the UI without page refresh.
+\\\python
+name           # Strategy name (unique)
+description    # Strategy description
+minCapital     # Minimum required capital
+successRate    # Historical success rate
+riskReward     # Risk:Reward ratio
+created_at / updated_at
+\\\
 
-4. **PnL Calendar** — renders a color-coded calendar (green = profit day, red = loss day) using data from `/api/pnl/calendar`.
+### Trade
 
-5. **Trade Metrics** — displays total P&L, win rate, and total number of trades pulled from `/api/trades`.
+\\\python
+user           # FK -> CustomUser
+symbol         # Trading symbol (e.g., NIFTY, EURUSD)
+type           # BUY | SELL
+quantity       # Number of units
+entryPrice     # Entry price
+currentPrice   # Live current price
+pnl            # Profit & Loss
+status         # OPEN | CLOSED
+created_at / updated_at
+\\\
 
----
+### DailyPnl
 
-## 🧠 Strategy & Backtest Engine
-
-The core intelligence lives in `api/strategy_backtest.py`.
-
-### Pattern: Double Top / Double Bottom
-
-The engine scans historical OHLCV data from **Yahoo Finance** to detect classic reversal patterns.
-
-### Entry & Exit Rules
-
-| Rule | Value |
-|---|---|
-| **Pattern Distance** | 10–60 candles between two peaks/troughs |
-| **Price Similarity** | < 1.5% difference between the two peaks/troughs |
-| **Entry** | Close of the neckline-break candle |
-| **Stop Loss** | Above/below both pattern extremes + 0.2% buffer |
-| **Take Profit 1 (TP1)** | Entry ± 1× Risk (close 50% of position) |
-| **Take Profit 2 (TP2)** | Entry ± 2× Risk (close remaining 50%) |
-| **After TP1** | SL moved to breakeven |
-| **Noise Filter** | Risk must be ≥ 0.3× ATR(14) |
-
-### Supported Timeframes
-
-| Timeframe | History Available |
-|---|---|
-| 15m, 30m, 45m | 60 days |
-| 1h, 2h, 4h | 730 days (2 years) |
-| 1d | 5 years |
-
-### Backtest Output Example
-
-```json
-{
-  "symbol": "EURUSD=X",
-  "timeframe": "1h",
-  "total_trades": 42,
-  "wins": 25,
-  "partials": 8,
-  "losses": 9,
-  "win_rate": 78.57,
-  "total_pnl": 0.15432,
-  "daily_pnl": { "2025-01-01": 0.0023 },
-  "trades": [...],
-  "candles": [...]
-}
-```
+\\\python
+user   # FK -> CustomUser
+date   # YYYY-MM-DD format
+pnl    # Float daily P&L value
+\\\
 
 ---
 
-## 🚀 How to Run Locally
+## 🔌 API Endpoints
 
-### Prerequisites
-- Python 3.10+
-- Git
+### Authentication
 
-### Step 1 — Clone the Repository
-
-```bash
-git clone https://github.com/UrvishaMungla/Nextun.git
-cd Nextun
-```
-
-### Step 2 — Create & Activate Virtual Environment
-
-**Windows:**
-```cmd
-python -m venv venv
-venv\Scripts\activate
-```
-
-**macOS / Linux:**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### Step 3 — Install Dependencies
-
-```bash
-pip install -r requirements.txt
-pip install yfinance pandas numpy
-```
-
-### Step 4 — Apply Database Migrations
-
-```bash
-python manage.py migrate
-```
-
-### Step 5 — (Optional) Create Admin User
-
-```bash
-python manage.py createsuperuser
-```
-
-### Step 6 — Run the Server
-
-```bash
-python manage.py runserver
-```
-
-| Page | URL |
-|---|---|
-| Landing Page | http://127.0.0.1:8000/ |
-| Dashboard | http://127.0.0.1:8000/dashboard |
-| Strategies | http://127.0.0.1:8000/strategies |
-| Trades | http://127.0.0.1:8000/trades |
-| Settings | http://127.0.0.1:8000/settings |
-| API Root | http://127.0.0.1:8000/api/ |
-| Admin Panel | http://127.0.0.1:8000/admin/ |
-
----
-
-## 🐳 Run with Docker
-
-```bash
-# Build and start
-docker-compose up --build
-
-# Run in background
-docker-compose up -d
-
-# Stop
-docker-compose down
-```
-
-App available at: **http://localhost:8000/**
-
----
-
-## 📡 API Endpoints
-
-### Auth
-```
-POST   /api/auth/register       Register a new user
-POST   /api/auth/login          Login and receive JWT tokens
-POST   /api/auth/refresh        Refresh access token
-```
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| POST | /api/register/ | Register new user | Public |
+| POST | /api/login/ | Login and get JWT tokens | Public |
+| POST | /api/token/refresh/ | Refresh JWT access token | Public |
 
 ### User
-```
-GET    /api/user/settings       Get current user profile
-PUT    /api/user/settings       Update profile / notification prefs
-PUT    /api/user/password       Change password
-```
 
-### Strategies
-```
-GET    /api/strategies                List all available strategies
-POST   /api/strategies/toggle         Activate or deactivate a strategy
-POST   /api/strategy/backtest         Run backtest { symbol, timeframe }
-```
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| GET | /api/user/ | Get current user profile | JWT |
+| PUT/PATCH | /api/settings/update/ | Update user settings | JWT |
 
 ### Trades
-```
-GET    /api/trades              Trade history
-                                ?filter=ALL|WIN|LOSS
-                                ?sort=DATE_DESC|DATE_ASC|PROFIT_DESC|LOSS_DESC
-```
 
-### PnL
-```
-GET    /api/pnl/calendar        Daily PnL records for calendar view
-```
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| GET | /api/trades/ | List all user trades | JWT |
+| POST | /api/trades/ | Create a new trade | JWT |
+| GET | /api/trades/{id}/ | Get single trade | JWT |
+| DELETE | /api/trades/{id}/ | Delete a trade | JWT |
 
-### Brokers
-```
-POST   /api/angelone/connect    Connect Angel One account
-POST   /api/exness/connect      Connect Exness MT5 account
-GET    /api/exness/dashboard    Get Exness account balance/margin data
-POST   /api/exness/disconnect   Disconnect Exness account
-```
+### Strategies
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| GET | /api/strategies/ | List available strategies | JWT |
+| POST | /api/strategies/select/ | Select active strategy | JWT |
+| POST | /api/backtest/ | Run strategy backtest | JWT |
+
+### Broker
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| POST | /api/broker/connect/ | Connect broker account | JWT |
+| POST | /api/broker/disconnect/ | Disconnect broker | JWT |
+
+### P&L
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| GET | /api/daily-pnl/ | Get daily P&L history | JWT |
+| POST | /api/daily-pnl/update/ | Update today's P&L | JWT |
 
 ### WebSocket
-```
-ws://host/ws/prices/            Real-time price feed via Django Channels
-```
+
+| Endpoint | Description |
+|---|---|
+| ws://host/ws/portfolio/ | Real-time portfolio updates |
 
 ---
 
-## 🌍 How to Clone
+## 🖥️ Frontend Pages
 
-```bash
-# Clone
+| Page | URL | Description |
+|---|---|---|
+| Landing | / | Marketing homepage with features and CTA |
+| Sign Up / Login | /signup/ | User registration and login forms |
+| Dashboard | /dashboard/ | Live P&L, open trades, monthly calendar |
+| Strategies | /strategies/ | Browse and activate trading strategies |
+| Trades | /trades/ | Full trade history with filters |
+| Settings | /settings/ | Broker connections, 2FA, notifications |
+| Pricing | /pricing/ | Plan comparison and subscription UI |
+
+---
+
+## 🏦 Broker Integrations
+
+### Angel One (SmartAPI)
+- Connects to India's Angel One SmartAPI
+- Stores clientCode, jwtToken, and refreshToken per user
+- Tracks connection state with isAngelOneConnected
+- Supports Indian equity and derivatives markets
+
+### Exness
+- Integrates Exness Forex broker
+- Stores accountId, password, and server credentials
+- Tracks connection with isExnessConnected
+- Supports Forex and CFD trading
+
+---
+
+## 🤖 Strategy Backtesting
+
+The strategy_backtest.py engine simulates trading strategies on historical data.
+
+### Supported Strategies
+
+| Strategy | Logic |
+|---|---|
+| Double Top / Bottom | Detects M/W price formations for reversal trades |
+| EMA Crossover | 9/21 EMA crossover signals |
+| RSI Reversal | RSI overbought/oversold entries |
+| MACD Divergence | MACD signal line cross strategy |
+
+### Backtest Output
+- Total trades count
+- Win rate percentage
+- Total P&L
+- Max drawdown
+- Sharpe ratio estimate
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Python 3.11+
+- pip
+- Git
+
+### 1. Clone the Repository
+
+\\\ash
 git clone https://github.com/UrvishaMungla/Nextun.git
-
-# Enter directory
 cd Nextun
+\\\
 
-# Create virtual environment
+### 2. Create Virtual Environment
+
+\\\ash
 python -m venv venv
 
-# Activate (Windows)
+# Windows
 venv\Scripts\activate
-# Activate (macOS/Linux)
+
+# macOS/Linux
 source venv/bin/activate
+\\\
 
-# Install dependencies
+### 3. Install Dependencies
+
+\\\ash
 pip install -r requirements.txt
-pip install yfinance pandas numpy
+\\\
 
-# Migrate database
+### 4. Apply Migrations
+
+\\\ash
 python manage.py migrate
+\\\
 
-# Run
+### 5. Create Superuser (Optional)
+
+\\\ash
+python manage.py createsuperuser
+\\\
+
+### 6. Run Development Server
+
+\\\ash
 python manage.py runserver
+\\\
 
-# Open browser at http://127.0.0.1:8000/
-```
+Visit: http://127.0.0.1:8000/
 
 ---
 
-## 🤝 Contributing
+## 🐳 Docker Deployment
 
-1. Fork this repository
-2. Create a new branch: `git checkout -b feature/your-feature-name`
-3. Commit your changes: `git commit -m 'Add your feature'`
-4. Push: `git push origin feature/your-feature-name`
-5. Open a Pull Request
+\\\ash
+# Build and start all services
+docker-compose up --build
+
+# Run in detached mode
+docker-compose up -d
+
+# Stop services
+docker-compose down
+\\\
+
+---
+
+## 🔧 Environment Variables
+
+Create a .env file in the project root:
+
+\\\env
+# Django
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# JWT Settings
+JWT_ACCESS_TOKEN_LIFETIME_MINUTES=60
+JWT_REFRESH_TOKEN_LIFETIME_DAYS=7
+
+# Angel One API (optional)
+ANGEL_ONE_API_KEY=your-angel-one-api-key
+
+# Exness API (optional)
+EXNESS_API_URL=https://api.exness.com
+\\\
+
+---
+
+## 📁 Project Structure
+
+\\\
+Nextun/
+|
++-- api/                          # Core Django app
+|   +-- __init__.py
+|   +-- admin.py                  # Django admin registration
+|   +-- apps.py                   # App configuration
+|   +-- consumers.py              # WebSocket consumer (Django Channels)
+|   +-- models.py                 # Database models
+|   +-- routing.py                # WebSocket URL routing
+|   +-- serializers.py            # DRF serializers
+|   +-- strategy_backtest.py      # Backtesting engine
+|   +-- tests.py                  # Unit tests
+|   +-- urls.py                   # API URL patterns
+|   +-- views.py                  # API views and business logic
+|   +-- migrations/               # Django DB migrations
+|
++-- nextun_project/               # Django project settings
+|   +-- asgi.py                   # ASGI config (Channels + Daphne)
+|   +-- settings.py               # Django settings
+|   +-- urls.py                   # Root URL configuration
+|   +-- wsgi.py                   # WSGI fallback
+|
++-- templates/                    # HTML templates
+|   +-- index.html                # Landing page
+|   +-- signup.html               # Auth page (register/login)
+|   +-- dashboard.html            # Main trading dashboard
+|   +-- strategies.html           # Strategy browser
+|   +-- trades.html               # Trade history
+|   +-- settings.html             # User settings and broker connect
+|   +-- pricing.html              # Pricing plans
+|
++-- static/                       # Static assets
+|   +-- style.css                 # Global CSS (dark mode design system)
+|   +-- dashboard.css             # Dashboard-specific styles
+|   +-- app.js                    # Auth and signup JS
+|   +-- dashboard.js              # Dashboard live data JS
+|   +-- strategies.js             # Strategy management JS
+|   +-- trades.js                 # Trades table JS
+|   +-- settings.js               # Settings form JS
+|   +-- pricing.js                # Pricing plan JS
+|   +-- logo.png                  # Brand assets
+|
++-- Dockerfile                    # Docker image definition
++-- docker-compose.yml            # Docker Compose services
++-- manage.py                     # Django management CLI
++-- requirements.txt              # Python dependencies
++-- .gitignore                    # Git ignore rules
++-- README.md                     # This file
+\\\
+
+---
+
+## 👤 Author
+
+**Urvisha Mungla**
+- GitHub: [@UrvishaMungla](https://github.com/UrvishaMungla)
+- Repository: [Nextun](https://github.com/UrvishaMungla/Nextun)
 
 ---
 
 ## 📄 License
 
-This project is open source and available under the [MIT License](LICENSE).
+This project is for educational and personal use. All rights reserved.
 
 ---
 
-<p align="center">Made with ❤️ by <a href="https://github.com/UrvishaMungla">Urvisha Mungla</a></p>
+<div align="center">
+  <strong>Built with love using Django, Django REST Framework and Django Channels</strong>
+</div>

@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     logoutBtn.addEventListener('click', function(e) {
       e.preventDefault();
       localStorage.removeItem('nextunToken');
+      window.location.href = '/';
     });
   }
 

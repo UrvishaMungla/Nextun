@@ -6,15 +6,28 @@ User = get_user_model()
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
+    username = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = User
         fields = ['email', 'username', 'password']
 
     def create(self, validated_data):
+        email = validated_data['email']
+        username = validated_data.get('username')
+        if not username:
+            username = email.split('@')[0]
+        
+        # Ensure username is unique in database
+        base_username = username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+
         user = User.objects.create_user(
-            email=validated_data['email'],
-            username=validated_data.get('username', validated_data['email'].split('@')[0]),
+            email=email,
+            username=username,
             password=validated_data['password']
         )
         return user

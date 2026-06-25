@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('logout-btn')?.addEventListener('click', (e) => {
     e.preventDefault();
     localStorage.removeItem('nextunToken');
+    window.location.href = '/';
   });
 
   // ─── Theme Toggle ─────────────────────────────────────────

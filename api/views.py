@@ -214,11 +214,11 @@ class AngelOneConnectView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        client_code = request.data.get('clientCode')
-        password = request.data.get('password')
+        client_code = request.data.get('clientId')
+        password = request.data.get('pin')
         totp = request.data.get('totp', '')
         if not client_code or not password:
-            return Response({'success': False, 'message': 'clientCode and password required'}, status=400)
+            return Response({'success': False, 'message': 'clientId and pin required'}, status=400)
         # Store credentials (in production, also validate via Angel One API)
         user = request.user
         user.angelOneClientCode = client_code

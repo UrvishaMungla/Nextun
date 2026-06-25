@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     localStorage.removeItem('nextunToken');
     localStorage.removeItem('dt_strategy_active');
+    window.location.href = '/';
   });
 
   // Restore activation state from localStorage

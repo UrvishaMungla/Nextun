@@ -276,8 +276,13 @@ form.addEventListener('submit', async (e) => {
       // Pre-fill login email
       loginEmail.value = emailInput.value;
     } else {
-      console.error('[Nextun] Signup failed:', data.message);
-      setErr(emailInput, emailErr, data.message || 'Registration failed');
+      let errMsg = data.message || 'Registration failed';
+      if (typeof errMsg === 'object') {
+        const key = Object.keys(errMsg)[0];
+        errMsg = Array.isArray(errMsg[key]) ? errMsg[key][0] : String(errMsg[key]);
+      }
+      console.error('[Nextun] Signup failed:', errMsg);
+      setErr(emailInput, emailErr, errMsg);
       shakeFirstErr(form);
     }
   } catch (error) {
@@ -323,8 +328,13 @@ loginForm.addEventListener('submit', async (e) => {
       /* Success → navigate to broker view */
       showBrokerView();
     } else {
-      console.error('[Nextun] Login failed:', data.message);
-      setErr(loginEmail, loginEmailErr, data.message || 'Login failed');
+      let errMsg = data.message || 'Login failed';
+      if (typeof errMsg === 'object') {
+        const key = Object.keys(errMsg)[0];
+        errMsg = Array.isArray(errMsg[key]) ? errMsg[key][0] : String(errMsg[key]);
+      }
+      console.error('[Nextun] Login failed:', errMsg);
+      setErr(loginEmail, loginEmailErr, errMsg);
       shakeFirstErr(loginForm);
     }
   } catch (error) {

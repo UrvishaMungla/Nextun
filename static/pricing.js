@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Clear token
       localStorage.removeItem('nextunToken');
       // Redirect back to login screen
-      // window.location.href = '/';
+      window.location.href = '/';
     });
   }
 
