@@ -1,0 +1,1228 @@
+/* ════════════════════════════════════════════════
+   NEXTUN  ·  Signup Page  ·  Figma-faithful CSS
+   ════════════════════════════════════════════════ */
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+button { font-family: inherit; cursor: pointer; }
+a      { font-family: inherit; }
+
+/* ── Design tokens ── */
+:root {
+  /* Colors */
+  --green:          #22C55E;
+  --green-hover:    #1AAF52;
+  --green-shadow:   rgba(34,197,94,.30);
+  --red:            #EF4444;
+  --red-badge:      #EF4444;
+
+  /* Page */
+  --page-bg:        #FFFFFF;
+  --dot-color:      #CBD1DC;
+
+  /* Illustration card */
+  --illus-bg:       transparent;
+  --illus-border:   transparent;
+  --illus-dot:      #D1D6E2;
+
+  /* Form card  (exact Figma: #FAFAFE) */
+  --card-bg:        #FAFAFE;
+  --card-border:    #E2E6EF;
+  --card-shadow:    0 2px 8px rgba(0,0,0,.06), 0 16px 48px rgba(0,0,0,.07);
+
+  /* Inputs */
+  --input-bg:       #F2F4F8;
+  --input-border:   #E0E4EF;
+  --input-focus-bd: #22C55E;
+  --input-focus-sh: rgba(34,197,94,.14);
+  --input-err-bd:   #EF4444;
+  --input-err-sh:   rgba(239,68,68,.10);
+  --input-ok-bd:    #22C55E;
+
+  /* Text */
+  --txt-title:      #111827;
+  --txt-label:      #374151;
+  --txt-body:       #4B5563;
+  --txt-muted:      #9CA3AF;
+  --txt-green:      #22C55E;
+  --txt-red:        #EF4444;
+
+  /* Geometry */
+  --r-card:         24px;
+  --r-input:        10px;
+  --r-pill:         999px;
+  --r-badge:        8px;
+
+  /* Typography */
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --ease: cubic-bezier(.4,0,.2,1);
+}
+
+/* ── Base ── */
+html, body {
+  min-height: 100vh;
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  color: var(--txt-label);
+}
+
+/* ── Full-page dot grid ── */
+body {
+  background-color: var(--page-bg);
+  background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ── Utility ── */
+.gone { display: none !important; }
+
+/* ════════════════════════════════════════════════
+   PAGE WRAPPER
+   Figma total width ≈ 1360px:
+     left-col  ~560px  +  gap 80px  +  form-card ~720px
+   ════════════════════════════════════════════════ */
+.page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Outer horizontal padding so content doesn't touch viewport edges */
+  padding: 64px 80px;
+
+  /* Gap between left column and form card */
+  gap: 80px;
+}
+
+/* ════════════════════════════════════════════════
+   LEFT COLUMN
+   Figma: logo (210×79) + illus card (617×617)
+   We use 560px width to stay proportional at 1360px total
+   ════════════════════════════════════════════════ */
+/* =========================
+   LEFT PANEL
+========================= */
+
+.left-panel{
+    width:40%;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+
+    min-height:100vh;
+}
+
+.brand{
+
+    display:flex;
+    align-items:center;
+    gap:15px;
+    margin-top: -60px;
+
+    margin-bottom:250px;
+    width: 210px;
+    height: 79px;
+}
+
+.brand img{
+    width:80px;
+}
+
+.brand h1{
+
+    font-size:58px;
+    font-family:Georgia, serif;
+    font-weight:500;
+}
+
+.illustration{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin-top:-200px;
+
+    flex:1;
+}
+
+.illustration img{
+    width:700px;
+    transform:translateX(-20px);
+}
+
+/* ════════════════════════════════════════════════
+   FORM CARD
+   Figma: 760×864 · #FAFAFE · radius 24px
+   At 1360px total we scale to ≈ 640px wide.
+   Padding 56px × 60px → content width = 640 - 120 = 520px
+   → "Create Your Nextun Account" fits on ONE line at ~2rem
+   ════════════════════════════════════════════════ */
+.form-card {
+  background: var(--card-bg);
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--r-card);
+  box-shadow: var(--card-shadow);
+  width: 100%;
+  max-width: 760px;
+  min-height:864px;
+  height:auto;       /* exact Figma spec: 864px */
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  /* padding removed to allow exact positioning from top */
+}
+
+/* ── Form title ── */
+.form-title {
+  font-family: 'Merriweather', serif;
+  font-weight: 400;
+  font-size: 39px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--txt-title);
+  /* margins will be set per-view to match absolute positioning */
+}
+
+/* ── View Containers ── */
+#signup-view, #login-view, #broker-view {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Signup specific */
+#signup-view .form-title {
+  width:100%;
+  max-width:532px;
+  margin: 40px auto 40px auto; /* left 114 + width 532 = 646. Right is 114. Centered! */
+  text-align: left; /* matching inputs alignment */
+}
+
+/* Login specific */
+#login-view .form-title {
+  max-width:450px;
+  width:100%;
+  margin:110px auto 40px;
+  height: 94px;
+  margin: 110px auto 40px auto; /* top 110px, left 155px is centered */
+  text-align: center;
+}
+
+/* Broker specific */
+#broker-view .form-title {
+  width:100%;
+  max-width:560px;
+  margin:60px auto 15px;
+  text-align:center;
+}
+
+/* ════════════════════════════════════════════════
+   FIELDS
+   ════════════════════════════════════════════════ */
+.fgroup {
+  width:100%;
+  max-width:532px;
+  margin:0 auto 22px;
+}
+
+.flabel {
+  display: block;
+  font-family: 'Merriweather', serif;
+  font-weight: 300;
+  font-size: 19px;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: var(--txt-label);
+  margin-bottom: 8px;
+}
+
+/* input wrapper */
+.ibox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* base input */
+.finput {
+  width: 100%;
+  height: 69px;        /* exact Figma spec: 69px */
+  background: transparent;
+  border: 1px solid var(--input-border); /* using 1px for browser consistency */
+  border-radius: 28px; /* exact Figma spec: 28px */
+  padding: 0 20px;
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: var(--txt-label);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+
+.finput.with-eye {
+  padding-right: 48px;
+}
+
+.finput::placeholder {
+  color: var(--txt-muted);
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+/* focus */
+.finput:focus {
+  background: #fff;
+  border-color: var(--input-focus-bd);
+  box-shadow: 0 0 0 3.5px var(--input-focus-sh);
+}
+
+/* validation states */
+.finput.err {
+  border-color: var(--input-err-bd);
+  box-shadow: 0 0 0 3px var(--input-err-sh);
+}
+.finput.ok {
+  border-color: var(--input-ok-bd);
+}
+
+/* ── Eye toggle ── */
+.eye-btn {
+  position: absolute;
+  right: 13px;
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--txt-muted);
+  display: flex;
+  align-items: center;
+  border-radius: 5px;
+  transition: color .16s;
+}
+.eye-btn:hover { color: var(--txt-body); }
+.eye-ico {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* ── Error text (no min-height so it doesn't add ghost space) ── */
+.ferr {
+  display: block;
+  font-size: 0.775rem;
+  font-weight: 500;
+  color: var(--txt-red);
+  margin-top: 4px;
+  line-height: 1.3;
+  min-height: 0;       /* removed min-height — no phantom spacing */
+}
+/* Only allocate height when there IS an error */
+.ferr:not(:empty) { margin-top: 5px; }
+
+/* ── Passwords match line ── */
+.match-line {
+  display: block;
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0;
+  min-height: 0;       /* no ghost spacing when empty */
+}
+.match-line:not(:empty) { margin-top: 6px; }
+.match-line.ok  { color: #32C997; }
+.match-line.bad { color: var(--txt-red);   }
+
+/* ════════════════════════════════════════════════
+   TERMS CHECKBOX
+   ════════════════════════════════════════════════ */
+.terms-row {
+  width:100%;
+  max-width:532px;
+  margin:0 auto 28px;
+}
+
+.cb-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Hide native input */
+.cb-real {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Custom checkbox box */
+.cb-box {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #C8CDD8;
+  border-radius: 4px;
+  background: var(--input-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  transition: background .16s, border-color .16s, box-shadow .16s;
+}
+
+.cb-real:checked + .cb-box {
+  background: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(34,197,94,.18);
+}
+
+/* Tick inside box */
+.cb-tick {
+  width: 11px;
+  height: 9px;
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity .14s, transform .14s;
+}
+.cb-real:checked + .cb-box .cb-tick {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.cb-text {
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0;
+  color: var(--txt-body);
+}
+
+/* Links */
+.txt-link {
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity .15s;
+  color: var(--txt-green); /* default green */
+}
+.txt-link:hover { opacity: 0.72; }
+.txt-link--bold { font-weight: 700; text-decoration: none; }
+
+/* Blue variant — Privacy Policy, Terms of Services, Log in */
+.txt-link--blue {
+  color: #0066DB;
+}
+.txt-link--blue:hover { opacity: 0.78; }
+
+/* ════════════════════════════════════════════════
+   NEXT BUTTON  — solid green pill
+   ════════════════════════════════════════════════ */
+.btn-next {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width:100%;
+  max-width:532px;
+  margin: 0 auto;
+  height: 69px;        /* match input height */
+  background: var(--green);
+  color: #fff;
+  font-family: 'Merriweather', serif;
+  font-weight: 400;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  border: none;
+  border-radius: 28px; /* match input radius */
+  box-shadow: 0 6px 20px var(--green-shadow);
+  transition: background .18s, transform .18s var(--ease), box-shadow .18s;
+}
+.btn-next:hover {
+  background: var(--green-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(34,197,94,.40);
+}
+.btn-next:active  { transform: translateY(0); }
+.btn-next:disabled { opacity: .65; pointer-events: none; }
+
+/* spinner icon */
+.spinner {
+  width: 20px;
+  height: 20px;
+  animation: spin .85s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ════════════════════════════════════════════════
+   LOGIN / FORGOT ROWS
+   ════════════════════════════════════════════════ */
+.login-row {
+  width:100%;
+  text-align:center;
+  margin:20px auto 0;        /* exact Figma spec: 284px */
+  height: 24px;        /* exact Figma spec: 24px */
+  margin: 20px auto 0 auto; /* centered, with 20px top gap from button */
+  text-align: center;
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--txt-body);
+}
+
+.forgot-row {
+  width:100%;
+  max-width:532px;
+  margin:-12px auto 24px;
+  text-align: left;
+}
+
+.forgot-row a {
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: #0066DB;
+  text-decoration: none;
+}
+.forgot-row a:hover {
+  text-decoration: underline;
+}
+
+.login-title{
+    text-align:center;
+}
+
+/* ════════════════════════════════════════════════
+   GOOGLE BUTTON  — white outlined pill
+   ════════════════════════════════════════════════ */
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width:100%;
+  max-width:532px;       /* exact Figma spec: 532px */
+  margin: 40px auto 0 auto; /* exact spacing: 698px (Google top) - 658px (login-row bottom) = 40px */
+  height: 56px;        /* exact Figma spec: 56px */
+  background: #fff;
+  border: 1px solid #DDE1EC;
+  border-radius: 28px;
+  padding: 20px 40px;  /* exact Figma spec padding */
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: var(--txt-label);
+  margin-top: 14px;
+  transition: border-color .18s, box-shadow .18s, transform .18s var(--ease);
+}
+.btn-google:hover {
+  border-color: #b8bdc9;
+  box-shadow: 0 3px 12px rgba(0,0,0,.08);
+  transform: translateY(-1px);
+}
+.btn-google:active { transform: translateY(0); }
+
+/* ════════════════════════════════════════════════
+   VALIDATION SHAKE
+   ════════════════════════════════════════════════ */
+@keyframes shake {
+  0%,100% { transform: translateX(0);    }
+  20%      { transform: translateX(-5px); }
+  40%      { transform: translateX(5px);  }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(3px);  }
+}
+.shake { animation: shake .38s ease; }
+
+/* ════════════════════════════════════════════════
+   SUCCESS OVERLAY
+   ════════════════════════════════════════════════ */
+.form-card.done {
+  position: relative;
+  overflow: hidden;
+}
+.form-card.done::after {
+  content: '✓  Account Created Successfully!';
+  position: absolute;
+  inset: 0;
+  background: rgba(250,250,254,.96);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--green);
+  border-radius: var(--r-card);
+  z-index: 20;
+  animation: fadeIn .3s ease;
+}
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+/* ════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   ════════════════════════════════════════════════ */
+
+/* ===================================
+TABLET
+=================================== */
+
+@media (max-width:1024px){
+
+.page-wrapper{
+    padding:40px;
+    gap:40px;
+}
+
+.left-panel{
+    width:45%;
+}
+
+.illustration img{
+    width:100%;
+    max-width:500px;
+}
+
+.form-card{
+    max-width:620px;
+}
+
+}
+
+
+/* ===================================
+MOBILE
+=================================== */
+
+@media (max-width:768px){
+
+.page-wrapper{
+    flex-direction:column;
+    padding:20px;
+    gap:30px;
+}
+
+.left-panel{
+    width:100%;
+    min-height:auto;
+    align-items:center;
+}
+
+.brand{
+    margin:0;
+    justify-content:center;
+}
+
+.brand h1{
+    font-size:42px;
+}
+
+.brand img{
+    width:60px;
+}
+
+.illustration{
+    margin:20px 0;
+}
+
+.illustration img{
+    width:100%;
+    max-width:320px;
+    transform:none;
+}
+
+.form-card{
+    width:100%;
+    max-width:100%;
+    min-height:auto;
+    padding:30px 20px;
+    border-radius:20px;
+}
+
+#signup-view .form-title,
+#login-view .form-title,
+#broker-view .form-title{
+    width:100%;
+    max-width:none;
+    margin:0 0 30px;
+    text-align:center;
+    font-size:30px;
+}
+
+.fgroup,
+.terms-row,
+.btn-next,
+.btn-google{
+    width:100%;
+    max-width:none;
+}
+
+.finput{
+    height:56px;
+}
+
+.login-row{
+    text-align:center;
+}
+
+.broker-container{
+    flex-direction:column;
+    align-items:center;
+}
+
+.broker-card{
+    width:100%;
+    max-width:340px;
+}
+
+.broker-title{
+    font-size:30px;
+}
+
+.broker-subtitle{
+    font-size:15px;
+    line-height:22px;
+}
+
+.broker-disclaimer{
+    width:100%;
+    padding:0;
+}
+
+.broker-disclaimer span{
+    font-size:14px;
+}
+
+}
+
+
+/* ===================================
+SMALL MOBILE
+=================================== */
+
+@media (max-width:480px){
+
+.page-wrapper{
+    padding:15px;
+}
+
+.brand h1{
+    font-size:34px;
+}
+
+.brand img{
+    width:50px;
+}
+
+.illustration img{
+    max-width:260px;
+}
+
+.form-card{
+    padding:20px 15px;
+}
+
+.form-title{
+    font-size:24px !important;
+}
+
+.flabel{
+    font-size:16px;
+}
+
+.finput{
+    height:50px;
+    font-size:14px;
+}
+
+.cb-text{
+    font-size:14px;
+    line-height:22px;
+}
+
+.btn-next,
+.btn-google{
+    height:52px;
+    font-size:15px;
+}
+
+.broker-title{
+    font-size:24px;
+}
+
+.broker-subtitle{
+    font-size:14px;
+}
+
+.broker-card{
+    padding:25px 15px;
+}
+
+.broker-card-label{
+    font-size:16px;
+}
+
+.btn-connect{
+    height:46px;
+    font-size:15px;
+}
+
+}
+/* ════════════════════════════════════════════════
+   BROKER VIEW — Connect Your Broker Account
+   ════════════════════════════════════════════════ */
+
+/* Override: broker title is centered */
+.broker-title {
+  width:100%;
+    max-width:560px;
+    margin:0 auto 15px;
+    text-align:center;
+
+    font-family:'Merriweather',serif;
+    font-size:39px;
+    font-weight:400;
+    line-height:1.2;
+    color:#000;
+}
+
+/* Subtitle under the heading */
+.broker-subtitle {
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0;
+  text-align: center;
+  color: #000000;
+  /* The broker card top is 295. Title bottom is 125+94=219. So we have 76px gap. */
+  width:100%;
+  max-width:520px;
+  margin:0 auto 35px;
+  padding:0 15px;
+  text-align:center;
+  font-size:16px;
+  line-height:24px; 
+}
+
+.broker-container{
+    display:flex;
+    justify-content:center;
+    align-items:stretch;
+    gap:24px;
+    flex-wrap:wrap;
+    margin-bottom:35px;
+}
+
+/* White card wrapper */
+.broker-card {
+  background: #fff;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 14px;
+  width: 100%;
+  flex:1;
+  max-width:340px;
+  min-width:260px;
+  min-height: 340px;
+  margin: 0 auto;
+  padding: 40px 15px 35px 15px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Angel One logo image */
+.broker-logo {
+  width: 80%;
+  max-width: 220px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* "Login with Angel One via Smart API" text */
+.broker-card-label {
+  width: 90%;
+  margin-top: 15px;
+  font-family: 'Merriweather', serif;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.43;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: #000000;
+}
+
+/* Connect button */
+.btn-connect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #01C26C;
+  color: #fff;
+  font-family: 'Merriweather', serif;
+  font-weight: 400;
+  font-size: 16px;
+  border: none;
+  border-radius: 28px;
+  width:100%;
+  max-width:250px;
+  height: 50px;
+  margin-top: 15px;
+  padding: 10px 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px var(--green-shadow);
+  transition: transform .15s, background .15s, box-shadow .15s;
+}
+.btn-connect:hover {
+  background: #00af60;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(1, 194, 108, 0.40);
+}
+.btn-connect:active { transform: translateY(0); }
+
+/* Security disclaimer row */
+.broker-disclaimer {
+  font-family: 'Roboto Serif', serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0;
+  color: #696969;
+  width:100%;
+  max-width:620px;
+  padding:0 15px;
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  margin: 0 auto;
+}
+
+.broker-disclaimer span {
+  text-align:left;
+  line-height:1.6;
+}
+
+/* Lock icon inside disclaimer */
+.lock-ico {
+  width: 15px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+.modal-content {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  width:min(90%,420px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.modal-header h2 {
+  font-size: 1.5rem;
+  margin: 0;
+  color: #1a1a1a;
+}
+.close-modal {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #666;
+}
+.form-group {
+  margin-bottom: 1.2rem;
+}
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  font-size: 0.9rem;
+}
+.form-group input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #e1e1e1;
+  background: #ffffff;
+  border-radius: 8px;
+  color: #1a1a1a;
+  font-size: 1rem;
+}
+.form-group input:focus {
+  outline: none;
+  border-color: #00b852;
+}
+
+/* ================= LOGIN OTP ================= */
+
+.otp-desc{
+    text-align:center;
+    color:#666;
+    margin:15px 0 25px;
+    line-height:22px;
+}
+
+.otp-boxes{
+    display:flex;
+    justify-content:center;
+    gap:12px;
+}
+
+.login-otp-input, .signup-otp-input, .angelone-otp-input {
+
+    width:52px;
+    height:56px;
+
+    border:1px solid #dcdcdc;
+    border-radius:12px;
+
+    font-size:22px;
+    text-align:center;
+
+    outline:none;
+
+    transition:.2s;
+}
+
+.login-otp-input:focus, .signup-otp-input:focus, .angelone-otp-input:focus {
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(0, 184, 82, 0.1);
+}
+
+.otp-error{
+
+    color:#EF4444;
+    text-align:center;
+    margin-top:15px;
+    font-size:14px;
+
+}
+
+.otp-boxes.error{
+
+    animation:shake .4s;
+
+}
+
+.otp-boxes.error .login-otp-input,
+.otp-boxes.error .signup-otp-input,
+.otp-boxes.error .angelone-otp-input {
+    border-color: #EF4444;
+}
+
+#verify-login-otp-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+}
+
+.otp-verify-btn{
+    width:100%;
+    margin-top:25px;
+    padding:16px;
+    border:none;
+    border-radius:50px;
+
+    background:#22C55E;
+    color:#fff;
+
+    font-size:20px;
+    font-weight:600;
+
+    cursor:pointer;
+    transition:.25s;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+}
+
+.otp-verify-btn:hover{
+    background:#16A34A;
+}
+
+.otp-verify-btn:disabled{
+    opacity:.7;
+    cursor:not-allowed;
+}
+
+#verify-otp-loader{
+
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+}
+
+#verify-login-otp-btn:disabled{
+
+    opacity:.75;
+    cursor:not-allowed;
+
+}
+@keyframes spin{
+    to{
+        transform:rotate(360deg);
+    }
+}
+
+.modal-overlay{
+
+    position:fixed;
+    inset:0;
+
+    background:rgba(0,0,0,.55);
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    padding:20px;
+
+    z-index:9999;
+
+}
+.modal-content{
+
+    width:100%;
+    max-width:430px;
+
+    background:#fff;
+
+    border-radius:18px;
+
+    padding:28px;
+
+    box-shadow:0 20px 60px rgba(0,0,0,.18);
+
+    animation:popup .25s ease;
+
+}
+@media(max-width:768px){
+
+.modal-overlay{
+
+        padding:18px;
+
+    }
+
+    .modal-content{
+
+        width:100%;
+        max-width:100%;
+
+        padding:22px;
+
+        border-radius:16px;
+
+    }
+
+    .modal-header h2{
+
+        font-size:22px;
+
+    }
+
+    .otp-desc{
+
+        font-size:15px;
+
+        line-height:22px;
+
+    }
+
+    .otp-boxes{
+
+        gap:8px;
+
+    }
+
+    .login-otp-input{
+
+        width:44px;
+
+        height:52px;
+
+        font-size:20px;
+
+    }
+
+    .otp-verify-btn{
+
+        padding:15px;
+
+        font-size:17px;
+
+    }
+
+
+}
+
+@media (max-width:380px){
+
+    .modal-content{
+
+        padding:18px;
+
+    }
+
+    .otp-boxes{
+
+        gap:6px;
+
+    }
+
+    .login-otp-input{
+
+        width:40px;
+
+        height:48px;
+
+        font-size:18px;
+
+    }
+
+    .otp-verify-btn{
+
+        font-size:16px;
+
+        padding:14px;
+
+    }
+
+}
