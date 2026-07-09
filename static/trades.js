@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ─── Load Backtest Trades from localStorage ───────────────
-  const isStrategyActive = localStorage.getItem('dt_strategy_active') === 'true';
+  const isStrategyActive = localStorage.getItem('dt_strategy_active') === 'true' || localStorage.getItem('lt_strategy_active') === 'true';
   const btTradesRaw      = localStorage.getItem('bt_trades');
   const btSummaryRaw     = localStorage.getItem('bt_summary');
   const tbody = document.getElementById('trades-table-body');
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!trades || trades.length === 0) {
       showEmptyState(
         '📭 No Trades Generated',
-        'The backtest ran successfully but found no Double Top / Double Bottom patterns in the selected timeframe. Try a different symbol or timeframe.',
+        'The backtest ran successfully but found no patterns in the selected timeframe. Try a different symbol or timeframe.',
         'Try Another Backtest →',
         '/strategies'
       );
@@ -117,15 +117,19 @@ document.addEventListener('DOMContentLoaded', () => {
           pnlEl.className = summary.total_pnl >= 0 ? 'tm-val text-green' : 'tm-val text-red';
         }
 
-        // Show source banner
+        // Show source banner — dynamic strategy name
+        const stratName = summary.strategy_name || 'Double Top / Double Bottom';
+        const isLT = stratName === 'Liquidity Trap';
+        const stratIcon = isLT ? '💧' : '📊';
+        const stratColor = isLT ? '#f59e0b' : '#3b82f6';
         const bannerEl = document.getElementById('trades-source-banner');
         if (bannerEl) {
           bannerEl.style.display = 'flex';
           bannerEl.innerHTML = `
-            <span style="font-size:13px; color:#3b82f6; font-weight:600;">
-              📊 Double Top/Bottom Backtest — ${summary.symbol} / ${summary.timeframe}
+            <span style="font-size:13px;color:${stratColor};font-weight:600;">
+              ${stratIcon} ${stratName} Backtest — ${summary.symbol} / ${summary.timeframe}
             </span>
-            <span style="margin-left:auto; font-size:12px; color:var(--text-gray);">
+            <span style="margin-left:auto;font-size:12px;color:var(--text-gray);">
               ${summary.wins} Full Wins | ${summary.partials || 0} Partial | ${summary.losses} Losses | PnL: ${summary.total_pnl >= 0 ? '+' : ''}${summary.total_pnl.toFixed(4)}
             </span>
           `;

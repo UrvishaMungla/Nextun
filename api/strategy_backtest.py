@@ -2,6 +2,7 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+from .market_utils import is_market_open
 
 # ─── Timeframe Configuration ──────────────────────────────────────────────────
 # Maps UI timeframe → (yfinance_interval, yfinance_period, resample_from)
@@ -101,7 +102,7 @@ def find_swing_lows(low_series, order=3):
 
 
 # ─── Main Backtest Engine ─────────────────────────────────────────────────────
-def backtest_strategy(symbol, timeframe='1h'):
+def backtest_strategy(symbol, timeframe='1h', use_market_hours=False):
     """
     Double Top / Double Bottom backtest engine.
 
@@ -153,6 +154,10 @@ def backtest_strategy(symbol, timeframe='1h'):
         curr_low   = float(lows.iloc[idx])
         curr_open  = float(opens.iloc[idx])
         curr_close = float(closes.iloc[idx])
+        
+        # Check market hours if enabled (only applies to new entries)
+        if use_market_hours and not is_market_open(curr_time, symbol):
+            continue
 
         # ── Manage open trade ──────────────────────────────────────────
         if in_trade:

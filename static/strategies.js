@@ -122,6 +122,7 @@ async function runBacktest() {
 
   const symbol = document.getElementById('bt-symbol').value;
   const timeframe = document.getElementById('bt-timeframe').value;
+  const useMarketHours = document.getElementById('dt-market-hours')?.checked || false;
 
   const loading = document.getElementById('bt-loading');
   const statsEl = document.getElementById('bt-stats');
@@ -139,7 +140,7 @@ async function runBacktest() {
     const res = await fetch('/api/strategy/backtest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ symbol, timeframe })
+      body: JSON.stringify({ symbol, timeframe, strategy_name: 'Double Top / Double Bottom', use_market_hours: useMarketHours })
     });
 
     const data = await res.json();
@@ -173,8 +174,8 @@ async function runBacktest() {
       wins: d.wins,
       partials: d.partials || 0,
       losses: d.losses,
-      win_rate: d.win_rate,
-      total_pnl: d.total_pnl
+      total_pnl: d.total_pnl,
+      strategy_name: 'Double Top / Double Bottom'
     }));
     localStorage.setItem('dt_strategy_winrate', d.win_rate + '%');
     localStorage.setItem('dt_strategy_symbol', d.symbol);
@@ -271,3 +272,184 @@ function addLog(msg) {
 }
 
 
+
+
+// --- Liquidity Trap Strategy -------------------------------------
+
+// Restore LT state on page load
+(function () {
+  if (localStorage.getItem('lt_strategy_active') === 'true') {
+    ltSetActiveState(true);
+  }
+})();
+
+function ltSetActiveState(isActive) {
+  const badge = document.getElementById('lt-status-badge');
+  const btn = document.getElementById('lt-activate-btn');
+  if (badge) {
+    badge.textContent = isActive ? '? Active' : 'Available';
+    badge.className = 'strategy-badge ' + (isActive ? 'badge-active' : 'badge-available');
+  }
+  if (btn) {
+    btn.textContent = isActive ? '? Deactivate Strategy' : '? Activate Strategy';
+    btn.className = 'btn-activate ' + (isActive ? 'active-state' : '');
+  }
+}
+
+function ltToggleActivate() {
+  const current = localStorage.getItem('lt_strategy_active') === 'true';
+  const next = !current;
+  localStorage.setItem('lt_strategy_active', next ? 'true' : 'false');
+
+  if (next) {
+    const symbol = document.getElementById('lt-symbol')?.value || 'EURUSD=X';
+    const timeframe = document.getElementById('lt-timeframe')?.value || '5m';
+    localStorage.setItem('dt_strategy_name', 'Liquidity Trap');
+    localStorage.setItem('dt_strategy_symbol', symbol);
+    localStorage.setItem('dt_strategy_timeframe', timeframe);
+    localStorage.setItem('dt_strategy_rr', '1:2');
+    if (localStorage.getItem('dt_strategy_active') === 'true') {
+      localStorage.setItem('dt_strategy_active', 'false');
+      setActiveState(false);
+    }
+    ltSetActiveState(true);
+    ltRunBacktest();
+  } else {
+    localStorage.removeItem('dt_strategy_name');
+    localStorage.removeItem('dt_strategy_symbol');
+    localStorage.removeItem('dt_strategy_timeframe');
+    localStorage.removeItem('dt_strategy_winrate');
+    localStorage.removeItem('bt_trades');
+    localStorage.removeItem('bt_summary');
+    ltSetActiveState(false);
+  }
+}
+
+async function ltRunBacktest() {
+  const isStratActive = localStorage.getItem('lt_strategy_active') === 'true';
+  if (!isStratActive) {
+    alert("Please click '? Activate Strategy' on Liquidity Trap first.");
+    return;
+  }
+
+  const symbol = document.getElementById('lt-symbol').value;
+  const timeframe = document.getElementById('lt-timeframe').value;
+  const useMarketHours = document.getElementById('lt-market-hours')?.checked || false;
+
+  const loading = document.getElementById('lt-loading');
+  const statsEl = document.getElementById('lt-stats');
+  const tradeSection = document.getElementById('lt-trade-section');
+  const runBtn = document.getElementById('lt-run-btn');
+
+  loading.style.display = 'block';
+  statsEl.style.display = 'none';
+  tradeSection.style.display = 'none';
+  runBtn.disabled = true;
+  runBtn.style.opacity = '0.6';
+
+  try {
+    const res = await fetch('/api/strategy/backtest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol, timeframe, strategy_name: 'Liquidity Trap', use_market_hours: useMarketHours })
+    });
+
+    const data = await res.json();
+    if (!data.success) { alert('Backtest error: ' + (data.message || 'Unknown error')); return; }
+
+    const d = data.data;
+    document.getElementById('lt-rc-total').textContent = d.total_trades;
+    document.getElementById('lt-rc-winrate').textContent = d.win_rate + '%';
+    document.getElementById('lt-rc-wl').textContent = d.wins + ' / ' + d.losses;
+    document.getElementById('lt-win-rate').textContent = d.win_rate + '%';
+
+    const pnlEl = document.getElementById('lt-rc-pnl');
+    pnlEl.textContent = (d.total_pnl >= 0 ? '+' : '') + d.total_pnl.toFixed(4);
+    pnlEl.style.color = d.total_pnl >= 0 ? '#16a34a' : '#dc2626';
+    statsEl.style.display = 'grid';
+
+    const tradesWithSymbol = (d.trades || []).map(t => ({ ...t, symbol: d.symbol }));
+    localStorage.setItem('bt_trades', JSON.stringify(tradesWithSymbol));
+    localStorage.setItem('bt_summary', JSON.stringify({
+      symbol: d.symbol, timeframe: d.timeframe, total_trades: d.total_trades,
+      wins: d.wins, partials: d.partials || 0, losses: d.losses,
+      win_rate: d.win_rate, total_pnl: d.total_pnl, strategy_name: 'Liquidity Trap'
+    }));
+    localStorage.setItem('dt_strategy_winrate', d.win_rate + '%');
+    localStorage.setItem('dt_strategy_symbol', d.symbol);
+    localStorage.setItem('dt_strategy_timeframe', d.timeframe);
+
+    if (tradeSection) {
+      tradeSection.style.display = 'block';
+      tradeSection.innerHTML = `
+        <div style="text-align:center;padding:20px;background:var(--bg-color);border-radius:12px;border:1px solid var(--border-color);">
+          <div style="font-size:28px;margin-bottom:8px;">?</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text-dark);margin-bottom:6px;">${d.total_trades} trades saved for ${d.symbol} (Liquidity Trap)</div>
+          <div style="font-size:13px;color:var(--text-gray);margin-bottom:14px;">
+            ${d.wins} Full Wins � ${d.partials || 0} Partial Wins � ${d.losses} Losses � Win Rate: ${d.win_rate}% � Net P&L: ${d.total_pnl >= 0 ? '+' : ''}${d.total_pnl.toFixed(4)}
+          </div>
+          <a href="/trades" style="display:inline-block;padding:10px 24px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:white;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">?? View All Trades in Trades Page ?</a>
+        </div>`;
+    }
+  } catch (err) {
+    console.error('Liquidity Trap Backtest failed:', err);
+    alert('Network error. Make sure the Django server is running on port 8000.');
+  } finally {
+    loading.style.display = 'none';
+    runBtn.disabled = false;
+    runBtn.style.opacity = '1';
+  }
+}
+
+let ltBotInterval = null;
+
+function ltToggleBot(checkbox) {
+  const panel = document.getElementById('lt-bot-panel');
+  const label = document.getElementById('lt-bot-label-text');
+  const log = document.getElementById('lt-bot-log');
+  if (checkbox.checked) {
+    panel.style.display = 'block';
+    label.textContent = 'Bot: ACTIVE ??';
+    label.style.color = '#16a34a';
+    log.innerHTML = '';
+    const sym = document.getElementById('lt-symbol').value;
+    const tf = document.getElementById('lt-timeframe').value;
+    ltAddLog(`[SYSTEM] Liquidity Trap Bot started. Monitoring ${sym} on ${tf}...`);
+    ltBotInterval = setInterval(() => {
+      const rand = Math.random();
+      const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
+      const price = (Math.random() * 0.5 + 1.05).toFixed(5);
+      const sl = (parseFloat(price) - 0.0015).toFixed(5);
+      const tp = (parseFloat(price) + 0.0030).toFixed(5);
+      const pool = (parseFloat(price) - 0.0020).toFixed(5);
+      if (rand < 0.10) {
+        ltAddLog(`[${now}] ?? SWEEP below pool ${pool} | LONG ENTRY @ ${price} | SL: ${sl} | TP: ${tp}`);
+      } else if (rand < 0.20) {
+        const ep = (Math.random() * 0.5 + 1.05).toFixed(5);
+        const s = (parseFloat(ep) + 0.0015).toFixed(5);
+        const t = (parseFloat(ep) - 0.0030).toFixed(5);
+        ltAddLog(`[${now}] ?? SWEEP above pool | SHORT ENTRY @ ${ep} | SL: ${s} | TP: ${t}`);
+      } else {
+        ltAddLog(`[${now}] ?? Monitoring ${sym} (${tf})... Waiting for sweep signal.`);
+      }
+    }, 3500);
+  } else {
+    clearInterval(ltBotInterval);
+    ltBotInterval = null;
+    panel.style.display = 'none';
+    label.textContent = 'Bot: OFF';
+    label.style.color = '';
+  }
+}
+
+function ltAddLog(msg) {
+  const log = document.getElementById('lt-bot-log');
+  if (!log) return;
+  const line = document.createElement('div');
+  line.textContent = msg;
+  if (msg.includes('LONG') || msg.includes('??')) line.style.color = '#4ade80';
+  else if (msg.includes('SHORT') || msg.includes('??')) line.style.color = '#f87171';
+  else if (msg.includes('SYSTEM')) line.style.color = '#60a5fa';
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}

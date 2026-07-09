@@ -96,7 +96,7 @@
 
     /* Backtest Controls */
     .bt-controls {
-      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
+      display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;
       margin-top: 16px; padding-top: 16px;
       border-top: 1px solid var(--border-color);
     }
@@ -259,6 +259,7 @@
         <p>Activate a strategy to enable auto-trading signals</p>
       </div>
 
+      <!-- Double Top/Bottom Strategy Card -->
       <div class="strategy-card" id="dt-strategy-card">
         <div class="strategy-card-header">
           <div class="strategy-card-title">
@@ -322,6 +323,16 @@
               <option value="4h">4 Hours</option>
               <option value="1d">Daily</option>
             </select>
+          </div>
+          <div>
+            <label>Market Hours Filter</label>
+            <div class="bot-row" style="margin-top:4px; padding-top:0; border-top:none;">
+              <label class="switch" style="transform:scale(0.85);">
+                <input type="checkbox" id="dt-market-hours">
+                <span class="slider round"></span>
+              </label>
+              <span class="bot-label">ON/OFF</span>
+            </div>
           </div>
           <div>
             <label>Bot Signal Mode</label>
@@ -388,7 +399,127 @@
           <div id="bot-log"></div>
         </div>
 
-      </div><!-- end strategy-card -->
+      </div><!-- end dt strategy-card -->
+
+      <!-- ─── Liquidity Trap Strategy Card ─────────────────────── -->
+      <div class="strategy-card" id="lt-strategy-card">
+        <div class="strategy-card-header">
+          <div class="strategy-card-title">
+            <div class="strategy-icon" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">💧</div>
+            <div>
+              <div class="strategy-name">Liquidity Trap &amp; Inducement</div>
+              <div class="strategy-sub">Smart money sweep — 1H/4H pool + 5M/15M execution</div>
+            </div>
+          </div>
+          <span class="strategy-badge badge-available" id="lt-status-badge">Available</span>
+        </div>
+
+        <div class="strategy-stats">
+          <div class="stat-box">
+            <div class="stat-label">Min Capital</div>
+            <div class="stat-value">$300</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Risk / Reward</div>
+            <div class="stat-value">1 : 2</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Est. Win Rate</div>
+            <div class="stat-value" id="lt-win-rate">~52%</div>
+          </div>
+        </div>
+
+        <p style="font-size:13px; color:var(--text-gray); line-height:1.7;">
+          Identifies <strong>Liquidity Pools</strong> formed by the rolling 24-hour High/Low on the 1H timeframe.
+          Waits for a <strong>Sweep &amp; Reclaim</strong> on a lower timeframe (5M/15M) as the entry trigger.
+          Targets the <strong>opposing swing</strong> with a 1:2 Risk-Reward, SL behind the sweep wick.
+        </p>
+
+        <div class="strategy-actions">
+          <button class="btn-activate" id="lt-activate-btn" onclick="ltToggleActivate()">⚡ Activate Strategy</button>
+          <button class="btn-run-bt" id="lt-run-btn" onclick="ltRunBacktest()">▶ Run Backtest</button>
+        </div>
+
+        <!-- Backtest Controls -->
+        <div class="bt-controls" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+          <div>
+            <label>Asset / Symbol</label>
+            <select id="lt-symbol">
+              <option value="EURUSD=X">EUR/USD (Forex)</option>
+              <option value="GBPUSD=X">GBP/USD (Forex)</option>
+              <option value="USDJPY=X">USD/JPY (Forex)</option>
+              <option value="AUDUSD=X">AUD/USD (Forex)</option>
+              <option value="BTC-USD">Bitcoin (BTC/USD)</option>
+              <option value="ETH-USD">Ethereum (ETH/USD)</option>
+              <option value="GC=F">Gold (XAU/USD)</option>
+              <option value="SI=F">Silver (XAG/USD)</option>
+            </select>
+          </div>
+          <div>
+            <label>Execution Timeframe</label>
+            <select id="lt-timeframe">
+              <option value="1m">1 Minute</option>
+              <option value="5m" selected>5 Minutes</option>
+              <option value="15m">15 Minutes</option>
+            </select>
+          </div>
+          <div>
+            <label>Market Hours Filter</label>
+            <div class="bot-row" style="margin-top:4px;padding-top:0;border-top:none;">
+              <label class="switch" style="transform:scale(0.85);">
+                <input type="checkbox" id="lt-market-hours">
+                <span class="slider round"></span>
+              </label>
+              <span class="bot-label" id="lt-market-hours-label">09:15 – 15:30 IST</span>
+            </div>
+          </div>
+          <div>
+            <label>Bot Signal Mode</label>
+            <div class="bot-row" style="margin-top:4px;padding-top:0;border-top:none;">
+              <label class="switch" style="transform:scale(0.85);">
+                <input type="checkbox" id="lt-bot-toggle" onchange="ltToggleBot(this)">
+                <span class="slider round"></span>
+              </label>
+              <span class="bot-label" id="lt-bot-label-text">Bot: OFF</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="lt-loading" style="display:none;padding:20px;text-align:center;color:var(--text-gray);font-size:13px;">
+          <span class="spinner"></span> Fetching multi-timeframe data &amp; running Liquidity Trap engine...
+        </div>
+
+        <!-- Result Stats -->
+        <div class="bt-result-stats" id="lt-stats" style="display:none;">
+          <div class="result-card">
+            <div class="rc-label">Total Trades</div>
+            <div class="rc-val" id="lt-rc-total">0</div>
+          </div>
+          <div class="result-card win">
+            <div class="rc-label">Win Rate</div>
+            <div class="rc-val" id="lt-rc-winrate" style="color:#16a34a;">0%</div>
+          </div>
+          <div class="result-card">
+            <div class="rc-label">Wins / Losses</div>
+            <div class="rc-val" id="lt-rc-wl">0 / 0</div>
+          </div>
+          <div class="result-card">
+            <div class="rc-label">Net P&amp;L</div>
+            <div class="rc-val" id="lt-rc-pnl">0.00</div>
+          </div>
+        </div>
+
+        <!-- Trade Result Banner -->
+        <div id="lt-trade-section" style="display:none;margin-top:20px;"></div>
+
+        <!-- Bot Signal Panel -->
+        <div class="bot-signal-panel" id="lt-bot-panel" style="display:none;">
+          <div class="bot-header">🟢 LIQUIDITY TRAP BOT ACTIVE — Live Signal Scanner</div>
+          <div id="lt-bot-log"></div>
+        </div>
+
+      </div><!-- end lt strategy-card -->
 
     </div><!-- end strat-page -->
   </main>

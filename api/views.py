@@ -14,6 +14,7 @@ from .serializers import (
 from datetime import datetime, date
 from django.utils import timezone
 from .strategy_backtest import backtest_strategy
+from .liquidity_trap_backtest import backtest_liquidity_trap
 import random
 
 from django.core.mail import send_mail
@@ -450,10 +451,16 @@ class BacktestStrategyView(APIView):
     def post(self, request):
         symbol = request.data.get('symbol', 'EURUSD=X')
         timeframe = request.data.get('timeframe', '1h')
+        strategy_name = request.data.get('strategy_name', 'Double Top / Double Bottom')
         
-        # Run the backtest engine
+        # Run the backtest engine based on strategy name
         try:
-            results = backtest_strategy(symbol, timeframe=timeframe)
+            use_market_hours = request.data.get('use_market_hours', False)
+            if strategy_name == 'Liquidity Trap':
+                results = backtest_liquidity_trap(symbol, timeframe=timeframe, use_market_hours=use_market_hours)
+            else:
+                results = backtest_strategy(symbol, timeframe=timeframe, use_market_hours=use_market_hours)
+                
             if 'error' in results:
                 return Response({'success': False, 'message': results['error']}, status=400)
             return Response({
