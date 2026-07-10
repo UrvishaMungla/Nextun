@@ -1,6 +1,18 @@
 import holidays
 from datetime import time
+from functools import lru_cache
 
+# ─── Global Caches for Massive Performance Gains ──────────────────────────────
+US_HOLIDAYS = holidays.US()
+IN_HOLIDAYS = holidays.India()
+
+IN_START_TIME = time(9, 15)
+IN_END_TIME = time(15, 30)
+
+US_START_TIME = time(9, 30)
+US_END_TIME = time(16, 0)
+
+@lru_cache(maxsize=128)
 def get_market_type(symbol):
     """
     Determine the market type from the Yahoo Finance symbol suffix.
@@ -34,8 +46,6 @@ def is_market_open(timestamp, symbol):
         # Forex is typically 24/5 (Mon-Fri)
         if weekday >= 5: # Saturday or Sunday
             return False
-        # Simplify holidays for Forex: we could check US/UK, but usually it trades unless it's a global major holiday.
-        # For this scope, 24/5 is a sufficient proxy.
         return True
 
     elif market_type == 'INDIAN':
@@ -43,16 +53,11 @@ def is_market_open(timestamp, symbol):
         if weekday >= 5:
             return False
         
-        # Check against Indian national holidays
-        # The holidays package handles historical and future moving holidays
-        in_holidays = holidays.India(years=date_obj.year)
-        if date_obj in in_holidays:
+        # O(1) lookup on global cached holidays
+        if date_obj in IN_HOLIDAYS:
             return False
             
-        # Check time window
-        start_time = time(9, 15)
-        end_time = time(15, 30)
-        if start_time <= time_obj <= end_time:
+        if IN_START_TIME <= time_obj <= IN_END_TIME:
             return True
         return False
         
@@ -61,13 +66,11 @@ def is_market_open(timestamp, symbol):
         if weekday >= 5:
             return False
             
-        us_holidays = holidays.US(years=date_obj.year)
-        if date_obj in us_holidays:
+        # O(1) lookup on global cached holidays
+        if date_obj in US_HOLIDAYS:
             return False
             
-        start_time = time(9, 30)
-        end_time = time(16, 0)
-        if start_time <= time_obj <= end_time:
+        if US_START_TIME <= time_obj <= US_END_TIME:
             return True
         return False
         

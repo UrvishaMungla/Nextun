@@ -137,6 +137,14 @@ def backtest_strategy(symbol, timeframe='1h', use_market_hours=False):
     peaks   = find_swing_highs(highs, order)
     valleys = find_swing_lows(lows, order)
 
+    # Convert to NumPy arrays for fast lookup in the main loop
+    highs_val  = highs.values
+    lows_val   = lows.values
+    opens_val  = opens.values
+    closes_val = closes.values
+    atr_val    = atr.values
+    times_val  = df.index
+
     trades       = []
     total_pnl    = 0.0
     wins = partials = losses = 0
@@ -147,13 +155,18 @@ def backtest_strategy(symbol, timeframe='1h', use_market_hours=False):
     entry_time   = None
     partial_done = False
     pattern_type = None   # 'DOUBLE_TOP' or 'DOUBLE_BOTTOM'
+    
+    peak_ptr = 0
+    valley_ptr = 0
+    num_peaks = len(peaks)
+    num_valleys = len(valleys)
 
     for idx in range(n):
-        curr_time  = df.index[idx]
-        curr_high  = float(highs.iloc[idx])
-        curr_low   = float(lows.iloc[idx])
-        curr_open  = float(opens.iloc[idx])
-        curr_close = float(closes.iloc[idx])
+        curr_time  = times_val[idx]
+        curr_high  = float(highs_val[idx])
+        curr_low   = float(lows_val[idx])
+        curr_open  = float(opens_val[idx])
+        curr_close = float(closes_val[idx])
         
         # Check market hours if enabled (only applies to new entries)
         if use_market_hours and not is_market_open(curr_time, symbol):
@@ -222,25 +235,27 @@ def backtest_strategy(symbol, timeframe='1h', use_market_hours=False):
             continue  # Skip entry scan while in a trade
 
         # Skip if ATR not yet available
-        curr_atr = float(atr.iloc[idx]) if not np.isnan(atr.iloc[idx]) else 0
+        curr_atr = float(atr_val[idx]) if not np.isnan(atr_val[idx]) else 0
         if curr_atr == 0:
             continue
 
         # ── Scan for Double Top ────────────────────────────────────────
-        past_peaks = [p for p in peaks if p < idx]
-        if len(past_peaks) >= 2:
-            p2, p1 = past_peaks[-1], past_peaks[-2]
+        while peak_ptr < num_peaks and peaks[peak_ptr] < idx:
+            peak_ptr += 1
+
+        if peak_ptr >= 2:
+            p2, p1 = peaks[peak_ptr - 1], peaks[peak_ptr - 2]
             dist = p2 - p1
 
             if 10 <= dist <= 60 and (idx - p2) <= 15:
                 # Use HIGH prices for the two tops
-                p1_high = float(highs.iloc[p1])
-                p2_high = float(highs.iloc[p2])
+                p1_high = float(highs_val[p1])
+                p2_high = float(highs_val[p2])
                 pdiff = abs(p1_high - p2_high) / p1_high
 
                 if pdiff <= 0.015:  # Within 1.5%
                     # Neckline = lowest low between the two tops
-                    neckline = float(lows.iloc[p1:p2 + 1].min())
+                    neckline = float(np.min(lows_val[p1:p2 + 1]))
 
                     # Confirmation: bearish candle that CLOSES below neckline
                     if curr_close < curr_open and curr_close < neckline:
@@ -262,20 +277,22 @@ def backtest_strategy(symbol, timeframe='1h', use_market_hours=False):
                             continue
 
         # ── Scan for Double Bottom ─────────────────────────────────────
-        past_valleys = [v for v in valleys if v < idx]
-        if len(past_valleys) >= 2:
-            v2, v1 = past_valleys[-1], past_valleys[-2]
+        while valley_ptr < num_valleys and valleys[valley_ptr] < idx:
+            valley_ptr += 1
+
+        if valley_ptr >= 2:
+            v2, v1 = valleys[valley_ptr - 1], valleys[valley_ptr - 2]
             dist = v2 - v1
 
             if 10 <= dist <= 60 and (idx - v2) <= 15:
                 # Use LOW prices for the two bottoms
-                v1_low = float(lows.iloc[v1])
-                v2_low = float(lows.iloc[v2])
+                v1_low = float(lows_val[v1])
+                v2_low = float(lows_val[v2])
                 vdiff = abs(v1_low - v2_low) / v1_low
 
                 if vdiff <= 0.015:
                     # Neckline = highest high between the two bottoms
-                    neckline = float(highs.iloc[v1:v2 + 1].max())
+                    neckline = float(np.max(highs_val[v1:v2 + 1]))
 
                     # Confirmation: bullish candle that CLOSES above neckline
                     if curr_close > curr_open and curr_close > neckline:
