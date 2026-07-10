@@ -158,45 +158,47 @@ def backtest_liquidity_trap(symbol, timeframe='5m', use_market_hours=False):
         if prev_low < major_low and curr_close > major_low:
             # Bullish reclaim candle
             if curr_close > curr_open:
-                ep = curr_close
-                sl_ = min(prev_low, curr_low) * 0.999 # Stop loss slightly below sweep wick
-                tp2_ = major_high # Final TP at opposing swing
-                risk = ep - sl_
-                if risk > 0:
-                    tp1_ = ep + risk # 1:1 TP for partial
-                    
-                    entry_price = ep
-                    sl = sl_
-                    tp1 = tp1_
-                    tp2 = tp2_
-                    in_trade = True
-                    partial_done = False
-                    trade_type = 'LONG'
-                    pattern_type = 'LIQUIDITY_TRAP_BUY'
-                    entry_time = curr_time
-                    continue
+                if i + 1 < len(exec_df):
+                    ep = exec_df['Open'].iloc[i+1]
+                    sl_ = min(prev_low, curr_low) * 0.999 # Stop loss slightly below sweep wick
+                    tp2_ = major_high # Final TP at opposing swing
+                    risk = ep - sl_
+                    if risk > 0:
+                        tp1_ = ep + risk # 1:1 TP for partial
+                        
+                        entry_price = ep
+                        sl = sl_
+                        tp1 = tp1_
+                        tp2 = tp2_
+                        in_trade = True
+                        partial_done = False
+                        trade_type = 'LONG'
+                        pattern_type = 'LIQUIDITY_TRAP_BUY'
+                        entry_time = exec_df.index[i+1]
+                        continue
 
         # SELL Setup: Sweep above 1H High, Reject (close below)
         if prev_high > major_high and curr_close < major_high:
             # Bearish rejection candle
             if curr_close < curr_open:
-                ep = curr_close
-                sl_ = max(prev_high, curr_high) * 1.001 # Stop loss slightly above sweep wick
-                tp2_ = major_low # Final TP at opposing swing
-                risk = sl_ - ep
-                if risk > 0:
-                    tp1_ = ep - risk # 1:1 TP for partial
-                    
-                    entry_price = ep
-                    sl = sl_
-                    tp1 = tp1_
-                    tp2 = tp2_
-                    in_trade = True
-                    partial_done = False
-                    trade_type = 'SHORT'
-                    pattern_type = 'LIQUIDITY_TRAP_SELL'
-                    entry_time = curr_time
-                    continue
+                if i + 1 < len(exec_df):
+                    ep = exec_df['Open'].iloc[i+1]
+                    sl_ = max(prev_high, curr_high) * 1.001 # Stop loss slightly above sweep wick
+                    tp2_ = major_low # Final TP at opposing swing
+                    risk = sl_ - ep
+                    if risk > 0:
+                        tp1_ = ep - risk # 1:1 TP for partial
+                        
+                        entry_price = ep
+                        sl = sl_
+                        tp1 = tp1_
+                        tp2 = tp2_
+                        in_trade = True
+                        partial_done = False
+                        trade_type = 'SHORT'
+                        pattern_type = 'LIQUIDITY_TRAP_SELL'
+                        entry_time = exec_df.index[i+1]
+                        continue
 
     total_trades = wins + partials + losses
     win_rate = round((wins + partials) / total_trades * 100, 2) if total_trades > 0 else 0

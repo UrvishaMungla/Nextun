@@ -13,6 +13,7 @@ from .serializers import (
 )
 from datetime import datetime, date
 from django.utils import timezone
+from django.db.models import Sum
 from .strategy_backtest import backtest_strategy
 from .liquidity_trap_backtest import backtest_liquidity_trap
 import random
@@ -293,7 +294,8 @@ class TradesView(APIView):
         trades = trades.order_by(sort_map.get(sort_val, '-created_at'))
 
         all_trades = Trade.objects.filter(user=request.user)
-        total_pnl = sum(t.pnl for t in all_trades)
+        agg = all_trades.aggregate(total_pnl=Sum('pnl'))
+        total_pnl = agg['total_pnl'] or 0.0
         wins = all_trades.filter(pnl__gt=0).count()
         total = all_trades.count()
         win_rate = round((wins / total * 100), 1) if total else 0
