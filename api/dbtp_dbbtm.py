@@ -81,7 +81,7 @@ def find_swings(df, left=3, right=3):
     return highs, lows
 
 
-def detect_double_top(df, highs):
+def detect_double_top(df, highs, symbol):
 
     if len(highs) < 2:
         return None
@@ -89,7 +89,7 @@ def detect_double_top(df, highs):
     h1 = highs[-2]
     h2 = highs[-1]
 
-    if h2-h1 < 20 or h2-h1 > 30:
+    if h2-h1 < 15 or h2-h1 > 45:
         return None
 
     p1 = df.close.iloc[h1]
@@ -100,14 +100,13 @@ def detect_double_top(df, highs):
 
     return {
         "action":"SELL",
-        "symbol":"EURUSD",
+        "symbol": symbol,
         "volume":0.01,
         "sl":150,
         "tp":300
     }
 
-
-def detect_double_bottom(df, lows):
+def detect_double_bottom(df, lows, symbol):
 
     if len(lows) < 2:
         return None
@@ -115,7 +114,7 @@ def detect_double_bottom(df, lows):
     l1 = lows[-2]
     l2 = lows[-1]
 
-    if l2-l1 < 20 or l2-l1 > 30:
+    if l2-l1 < 15 or l2-l1 > 45:
         return None
 
     p1 = df.close.iloc[l1]
@@ -126,40 +125,97 @@ def detect_double_bottom(df, lows):
 
     return {
         "action":"BUY",
-        "symbol":"EURUSD",
+        "symbol": symbol,
         "volume":0.01,
         "sl":150,
         "tp":300
     }
 
+def get_open_position(symbol):
+    """
+    Check MT5 for an open position on this symbol.
+    Returns "BUY", "SELL", or None.
+    """
+
+    positions = mt5.positions_get(symbol=symbol)
+
+    if positions is None or len(positions) == 0:
+        return None
+
+    # mt5.ORDER_TYPE_BUY == 0, mt5.ORDER_TYPE_SELL == 1
+    pos = positions[0]
+
+    if pos.type == mt5.ORDER_TYPE_BUY:
+        return "BUY"
+
+    if pos.type == mt5.ORDER_TYPE_SELL:
+        return "SELL"
+
+    return None
+
 
 def get_signal(symbol, timeframe):
 
     if not initialize():
-        return {"action":"NONE"}
+        return {"action": "NONE"}
 
     df = get_rates(symbol, timeframe)
 
     if df is None:
         shutdown()
-        return {"action":"NONE"}
+        return {"action": "NONE"}
 
     highs, lows = find_swings(df)
 
-    signal = detect_double_top(df, highs)
+    # Detect patterns
+    sell_signal = detect_double_top(df, highs, symbol)
+    buy_signal = detect_double_bottom(df, lows, symbol)
 
-    if signal:
+    # Check what position we currently hold
+    current_pos = get_open_position(symbol)
+
+    # ---- SELL pattern detected ----
+    if sell_signal:
+
+        # We have an open BUY → close it first
+        if current_pos == "BUY":
+            shutdown()
+            return {
+                "action": "CLOSE_BUY",
+                "symbol": symbol
+            }
+
+        # We already have a SELL open → do nothing
+        if current_pos == "SELL":
+            shutdown()
+            return {"action": "NONE"}
+
+        # No position → place the SELL
         shutdown()
-        return signal
+        return sell_signal
 
-    signal = detect_double_bottom(df, lows)
+    # ---- BUY pattern detected ----
+    if buy_signal:
 
-    if signal:
+        # We have an open SELL → close it first
+        if current_pos == "SELL":
+            shutdown()
+            return {
+                "action": "CLOSE_SELL",
+                "symbol": symbol
+            }
+
+        # We already have a BUY open → do nothing
+        if current_pos == "BUY":
+            shutdown()
+            return {"action": "NONE"}
+
+        # No position → place the BUY
         shutdown()
-        return signal
+        return buy_signal
 
     shutdown()
 
     return {
-        "action":"NONE"
+        "action": "NONE"
     }
