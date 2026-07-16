@@ -4,11 +4,22 @@ import pandas as pd
 
 TIMEFRAMES = {
     "M1": mt5.TIMEFRAME_M1,
+    "PERIOD_M1": mt5.TIMEFRAME_M1,
+
     "M5": mt5.TIMEFRAME_M5,
+    "PERIOD_M5": mt5.TIMEFRAME_M5,
+
     "M15": mt5.TIMEFRAME_M15,
+    "PERIOD_M15": mt5.TIMEFRAME_M15,
+
     "M30": mt5.TIMEFRAME_M30,
+    "PERIOD_M30": mt5.TIMEFRAME_M30,
+
     "H1": mt5.TIMEFRAME_H1,
+    "PERIOD_H1": mt5.TIMEFRAME_H1,
+
     "H4": mt5.TIMEFRAME_H4,
+    "PERIOD_H4": mt5.TIMEFRAME_H4,
 }
 
 
