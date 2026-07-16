@@ -1,0 +1,1 @@
+# Initialize the websockets package
