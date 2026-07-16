@@ -1,109 +1,136 @@
+import json
+import uvicorn
 from dataclasses import asdict
-from fastapi import FastAPI
-from fastapi import WebSocket
-from fastapi import WebSocketDisconnect
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
 from websocket.connection_manager import ConnectionManager
 from strategy_engine import StrategyEngine
 
 app = FastAPI()
 
 connection_manager = ConnectionManager()
-
 strategy_engine = StrategyEngine()
+
+
 @app.get("/")
 async def health():
-
     return {
-
         "status": "running",
-
         "service": "Trading Bridge"
-
     }
-@app.websocket("/mt5/{client_id}")
-async def mt5_client(
 
-    websocket: WebSocket,
 
-    client_id: str
+def decode_packet(message):
 
-):
+    if message["type"] == "websocket.disconnect":
+        raise WebSocketDisconnect()
 
-    # CONNECT
+    if message.get("bytes") is not None:
+        return json.loads(
+            message["bytes"].decode("utf-8")
+        )
 
-    await connection_manager.connect(
+    if message.get("text") is not None:
+        return json.loads(
+            message["text"]
+        )
 
-        client_id,
+    return None
 
-        websocket
 
-    )
+@app.websocket("/ws")
+async def mt5_client(websocket: WebSocket):
 
-    strategy_engine.register_user(
+    await websocket.accept()
 
-        client_id
-
-    )
-
-    print(
-
-        f"{client_id} connected."
-
-    )
+    client_id = None
 
     try:
 
+        # ---------------- Registration ----------------
+
+        packet = decode_packet(
+            await websocket.receive()
+        )
+
+        if packet is None:
+            await websocket.close()
+            return
+
+        if packet.get("type") != "register":
+            await websocket.close()
+            return
+
+        client_id = packet["client_id"]
+
+        await connection_manager.connect(
+            client_id,
+            websocket
+        )
+
+        print(f"{client_id} connected")
+
+        # ---------------- Main Loop ----------------
+
         while True:
 
-            # RECEIVE MARKET DATA
-
-            market_data = await websocket.receive_json()
-
-            # PROCESS
-
-            orders = await strategy_engine.process(
-
-                client_id,
-
-                market_data
-
+            packet = decode_packet(
+                await websocket.receive()
             )
+            print(packet)
 
-            # SEND ORDERS
+            if packet is None:
+                continue
 
-            for order in orders:
+            packet_type = packet.get("type")
 
-                await connection_manager.send(
+            
 
+            # Ignore duplicate register packets
+            if packet_type == "register":
+                continue
+
+            # Execution reports coming back from MT5
+            if packet_type == "execution_report":
+                print("Execution:", packet)
+                continue
+
+    # History candles
+            if packet_type == "history":
+                strategy_engine.update_market(packet)
+                continue
+
+            # Live candles
+            if packet_type == "market_data":
+
+                orders = await strategy_engine.process(
                     client_id,
-
-                    asdict(order)
-
+                    packet
                 )
 
+        for order in orders:
+            await connection_manager.send(
+                client_id,
+                asdict(order)
+            )
+
+            continue
 
     except WebSocketDisconnect:
 
-        print(
+        print(f"{client_id} disconnected")
 
-            f"{client_id} disconnected."
+    finally:
 
-        )
+        if client_id:
 
-        strategy_engine.remove_user(
+            await connection_manager.disconnect(
+                client_id
+            )
 
-            client_id
-
-        )
-
-        await connection_manager.disconnect(
-
-            client_id
-
-        )
 
 if __name__ == "__main__":
-    import uvicorn
 
     uvicorn.run(
         app,
