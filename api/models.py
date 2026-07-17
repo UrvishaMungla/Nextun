@@ -25,6 +25,8 @@ class CustomUser(AbstractUser):
     exnessServer = models.CharField(max_length=255, null=True, blank=True)
     isExnessConnected = models.BooleanField(default=False)
     activeStrategy = models.ForeignKey(Strategy, on_delete=models.SET_NULL, null=True, blank=True)
+    active_symbol = models.CharField(max_length=50, null=True, blank=True)
+    active_timeframe = models.CharField(max_length=10, null=True, blank=True)
     is2FAEnabled = models.BooleanField(default=False)
     # Notifications (can be stored as JSON, but let's break them down or use JSONField)
     notifications = models.JSONField(default=dict)
