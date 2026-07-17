@@ -354,7 +354,17 @@ class ToggleStrategyView(APIView):
         user = request.user
         if strategy_id:
             try:
-                strategy = Strategy.objects.get(id=strategy_id)
+                # Auto-create strategy if it doesn't exist in the database (e.g. fresh AWS deployment)
+                strategy, created = Strategy.objects.get_or_create(
+                    id=strategy_id,
+                    defaults={
+                        'name': 'Double Top / Double Bottom' if strategy_id == 1 else 'Liquidity Trap & Inducement',
+                        'description': 'Auto-created strategy',
+                        'minCapital': '$500' if strategy_id == 1 else '$300',
+                        'successRate': '~43%' if strategy_id == 1 else '~52%',
+                        'riskReward': '1:2'
+                    }
+                )
                 # Toggle: if already active, deactivate
                 if user.activeStrategy and user.activeStrategy.id == strategy.id:
                     user.activeStrategy = None
