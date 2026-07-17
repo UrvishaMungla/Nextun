@@ -22,6 +22,8 @@ urlpatterns = [
     path('strategies', views.StrategiesView.as_view(), name='strategies'),
     path('strategies/toggle', views.ToggleStrategyView.as_view(), name='toggle_strategy'),
     path('strategy/backtest', views.BacktestStrategyView.as_view(), name='strategy_backtest'),
+    path('strategy/execute', views.ExecuteStrategyView.as_view(), name='strategy_execute'),
+    path('bot/status', views.BotStatusView.as_view(), name='bot_status'),
 
     # Trades
     path('trades', views.TradesView.as_view(), name='trades'),

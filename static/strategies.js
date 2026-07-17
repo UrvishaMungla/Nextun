@@ -112,6 +112,137 @@ function toggleActivate() {
   }
 }
 
+let botStatusInterval = null;
+
+async function executeLiveStrategy() {
+  const token = localStorage.getItem('nextunToken');
+  if (!token) {
+    alert("Please log in first to run the live strategy.");
+    return;
+  }
+  
+  const symbol = document.getElementById('bt-symbol').value;
+  const timeframe = document.getElementById('bt-timeframe').value;
+  const execBtn = document.getElementById('dt-execute-btn');
+  const panel = document.getElementById('bot-panel');
+  const log = document.getElementById('bot-log');
+  
+  const originalText = execBtn.textContent;
+  execBtn.disabled = true;
+  execBtn.textContent = 'Wait...';
+
+  try {
+    const stratRes = await fetch('/api/strategies', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const stratData = await stratRes.json();
+    let strategyId = 1;
+    if (stratData.success && stratData.data && stratData.data.strategies) {
+      const strat = stratData.data.strategies.find(s => s.name.includes("Double Top"));
+      if (strat) strategyId = strat.id;
+    }
+
+    const res = await fetch('/api/strategies/toggle', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      },
+      body: JSON.stringify({ strategyId, symbol, timeframe })
+    });
+
+    const data = await res.json();
+    
+    if (data.success) {
+      // Use exact match — "Strategy activated" vs "Strategy stopped"
+      if (data.message === 'Strategy activated') {
+        // Started
+        execBtn.textContent = 'Stop Live Strategy';
+        execBtn.classList.add('active-state');
+        panel.style.display = 'block';
+        log.innerHTML = '';
+        addLog('[SYSTEM] Bot activated! Live logs will appear below...');
+        
+        // Save to Dashboard
+        localStorage.setItem('dt_strategy_active', 'true');
+        localStorage.setItem('dt_strategy_name', 'Double Top / Double Bottom');
+        localStorage.setItem('dt_strategy_symbol', symbol);
+        localStorage.setItem('dt_strategy_timeframe', timeframe);
+        localStorage.setItem('dt_strategy_rr', '1:2');
+
+        // Start polling bot status every 5 seconds
+        startBotStatusPolling(token, log);
+
+      } else {
+        // Stopped
+        execBtn.textContent = 'Run Live Strategy';
+        execBtn.classList.remove('active-state');
+        addLog('[SYSTEM] Bot stopped.');
+        
+        // Stop polling
+        if (botStatusInterval) {
+          clearInterval(botStatusInterval);
+          botStatusInterval = null;
+        }
+
+        // Hide panel after a short delay
+        setTimeout(() => { panel.style.display = 'none'; }, 2000);
+        
+        // Remove from Dashboard
+        localStorage.setItem('dt_strategy_active', 'false');
+        localStorage.removeItem('dt_strategy_name');
+        localStorage.removeItem('dt_strategy_symbol');
+        localStorage.removeItem('dt_strategy_timeframe');
+      }
+    } else {
+      alert("Error: " + (data.message || 'Unknown error'));
+      execBtn.textContent = originalText;
+    }
+  } catch (err) {
+    console.error('Toggle failed:', err);
+    alert('Network error while toggling strategy.');
+    execBtn.textContent = originalText;
+  } finally {
+    execBtn.disabled = false;
+  }
+}
+
+function startBotStatusPolling(token, logEl) {
+  // Clear any existing interval
+  if (botStatusInterval) clearInterval(botStatusInterval);
+  
+  let lastLogCount = 0;
+
+  botStatusInterval = setInterval(async () => {
+    try {
+      const res = await fetch('/api/bot/status', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (data.success && data.logs && data.logs.length > lastLogCount) {
+        // Only add NEW logs
+        const newLogs = data.logs.slice(lastLogCount);
+        newLogs.forEach(msg => addLog(msg));
+        lastLogCount = data.logs.length;
+      }
+
+      // If bot stopped on its own, update the button
+      if (data.success && !data.running) {
+        const btn = document.getElementById('dt-execute-btn');
+        if (btn && btn.textContent.includes('Stop')) {
+          btn.textContent = '⚡ Run Live Strategy';
+          btn.classList.remove('active-state');
+          clearInterval(botStatusInterval);
+          botStatusInterval = null;
+        }
+      }
+    } catch (e) {
+      // Silently ignore polling errors
+    }
+  }, 2000);
+}
+
 // ─── Run Backtest ──────────────────────────────────────────────
 async function runBacktest() {
   const isStratActive = localStorage.getItem('dt_strategy_active') === 'true';
@@ -216,46 +347,89 @@ async function runBacktest() {
 // ─── Bot Signal Generator ──────────────────────────────────────
 let botInterval = null;
 
-function toggleBot(checkbox) {
+async function toggleBot(checkbox) {
   const panel = document.getElementById('bot-panel');
   const label = document.getElementById('bot-label-text');
   const log = document.getElementById('bot-log');
+  
+  const token = localStorage.getItem('nextunToken');
+  if (!token) {
+    alert("Please log in first to run the live strategy.");
+    checkbox.checked = false;
+    return;
+  }
+  
+  const symbol = document.getElementById('bt-symbol').value;
+  const timeframe = document.getElementById('bt-timeframe').value;
 
-  if (checkbox.checked) {
-    panel.style.display = 'block';
-    label.textContent = 'Bot: ACTIVE 🟢';
-    label.style.color = '#16a34a';
-    log.innerHTML = '';
-    addLog('[SYSTEM] Bot started. Scanning patterns in real-time...');
+  checkbox.disabled = true;
 
-    const symbol = document.getElementById('bt-symbol').value;
-    const timeframe = document.getElementById('bt-timeframe').value;
+  try {
+    const stratRes = await fetch('/api/strategies', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const stratData = await stratRes.json();
+    let strategyId = 1;
+    if (stratData.success && stratData.data && stratData.data.strategies) {
+      const strat = stratData.data.strategies.find(s => s.name.includes("Double Top"));
+      if (strat) strategyId = strat.id;
+    }
 
-    botInterval = setInterval(() => {
-      const rand = Math.random();
-      const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
-      const price = (Math.random() * 0.5 + 1.05).toFixed(5);
-      const sl = (parseFloat(price) - 0.0020).toFixed(5);
-      const tp = (parseFloat(price) + 0.0040).toFixed(5);
+    const res = await fetch('/api/strategies/toggle', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      },
+      body: JSON.stringify({ strategyId, symbol, timeframe })
+    });
 
-      if (rand < 0.12) {
-        addLog(`[${now}] ✅ LONG ENTRY | ${symbol} @ ${price} | SL: ${sl} | TP: ${tp} | Pattern: Double Bottom`);
-      } else if (rand < 0.24) {
-        const ep = (Math.random() * 0.5 + 1.05).toFixed(5);
-        const s = (parseFloat(ep) + 0.0015).toFixed(5);
-        const t = (parseFloat(ep) - 0.0030).toFixed(5);
-        addLog(`[${now}] 🔴 SHORT ENTRY | ${symbol} @ ${ep} | SL: ${s} | TP: ${t} | Pattern: Double Top`);
+    const data = await res.json();
+    
+    if (data.success) {
+      if (data.message === 'Strategy activated') {
+        panel.style.display = 'block';
+        label.textContent = 'Bot: ACTIVE';
+        label.style.color = '#16a34a';
+        log.innerHTML = '';
+        addLog('[SYSTEM] Real Backend Bot activated! Live logs will appear below...');
+        
+        // Sync Dashboard variables
+        localStorage.setItem('dt_strategy_active', 'true');
+        localStorage.setItem('dt_strategy_name', 'Double Top / Double Bottom');
+        localStorage.setItem('dt_strategy_symbol', symbol);
+        localStorage.setItem('dt_strategy_timeframe', timeframe);
+        localStorage.setItem('dt_strategy_rr', '1:2');
+
+        startBotStatusPolling(token, log);
       } else {
-        addLog(`[${now}] 🔍 Scanning ${symbol} (${timeframe})... No confirmed setup.`);
-      }
-    }, 3500);
+        label.textContent = 'Bot: OFF';
+        label.style.color = '';
+        addLog('[SYSTEM] Bot stopped.');
+        
+        if (botStatusInterval) {
+          clearInterval(botStatusInterval);
+          botStatusInterval = null;
+        }
 
-  } else {
-    clearInterval(botInterval);
-    botInterval = null;
-    panel.style.display = 'none';
-    label.textContent = 'Bot: OFF';
-    label.style.color = '';
+        setTimeout(() => { panel.style.display = 'none'; }, 2000);
+        
+        // Remove Dashboard variables
+        localStorage.setItem('dt_strategy_active', 'false');
+        localStorage.removeItem('dt_strategy_name');
+        localStorage.removeItem('dt_strategy_symbol');
+        localStorage.removeItem('dt_strategy_timeframe');
+      }
+    } else {
+      alert("Error: " + (data.message || 'Unknown error'));
+      checkbox.checked = !checkbox.checked; // Revert
+    }
+  } catch (err) {
+    console.error('Toggle failed:', err);
+    alert('Network error while toggling strategy.');
+    checkbox.checked = !checkbox.checked; // Revert
+  } finally {
+    checkbox.disabled = false;
   }
 }
 

@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import get_user_model, authenticate, update_session_auth_hash
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -17,6 +17,9 @@ from django.db.models import Sum
 from .strategy_backtest import backtest_strategy
 from .liquidity_trap_backtest import backtest_liquidity_trap
 import random
+from .dbtp_dbbtm import get_signal
+from .exness_gateway import ExnessDummyGateway
+import MetaTrader5 as mt5
 
 from django.core.mail import send_mail
 
@@ -248,11 +251,106 @@ class StrategiesView(APIView):
         })
 
 
+import threading
+from collections import deque
+
+# ── Background Bot Engine (runs inside Django process) ──────────
+_bot_threads = {}   # user_id -> threading.Event (stop flag)
+_bot_logs = {}      # user_id -> deque of log strings (max 50)
+
+# Map Yahoo-style symbols to MT5 symbols (Exness Standard uses 'm' suffix)
+SYMBOL_MAP = {
+    'EURUSD=X': 'EURUSDm', 'GBPUSD=X': 'GBPUSDm', 'USDJPY=X': 'USDJPYm',
+    'AUDUSD=X': 'AUDUSDm', 'BTC-USD': 'BTCUSDm', 'ETH-USD': 'ETHUSDm',
+    'GC=F': 'XAUUSDm', 'SI=F': 'XAGUSDm',
+}
+# Map Yahoo-style timeframes to MT5 timeframe keys
+TF_MAP = {
+    '1m': 'M1', '5m': 'M5', '15m': 'M15', '30m': 'M30', '45m': 'M30',
+    '1h': 'H1', '2h': 'H1', '4h': 'H4', '1d': 'H4',
+}
+
+
+def _bot_log(user_id, msg):
+    """Add a log message to the user's bot log buffer and print to terminal."""
+    if user_id not in _bot_logs:
+        _bot_logs[user_id] = deque(maxlen=50)
+    _bot_logs[user_id].append(msg)
+    print(f"[BOT] {msg}")
+
+
+def _run_bot_loop(user_id, stop_event):
+    """Background thread that scans for patterns every 30 seconds."""
+    import time as _time
+    from .dbtp_dbbtm import get_signal
+    from .models import CustomUser, Trade
+
+    _bot_log(user_id, "Bot engine started!")
+
+    while not stop_event.is_set():
+        try:
+            user = CustomUser.objects.get(id=user_id)
+            if not user.activeStrategy or not user.active_symbol:
+                _bot_log(user_id, "No active strategy found. Stopping.")
+                break
+
+            raw_symbol = user.active_symbol
+            raw_tf = user.active_timeframe
+
+            mt5_symbol = SYMBOL_MAP.get(raw_symbol, raw_symbol)
+            mt5_tf = TF_MAP.get(raw_tf, raw_tf)
+
+            now_str = datetime.now().strftime("%H:%M:%S")
+            _bot_log(user_id, f"[{now_str}] Scanning {mt5_symbol} ({mt5_tf}) — fetching 300 candles from MT5...")
+
+            signal = get_signal(mt5_symbol, mt5_tf)
+            action = signal.get("action", "NONE")
+
+            if action in ["BUY", "SELL"]:
+                _bot_log(user_id, f"[{now_str}] PATTERN FOUND! {action} on {mt5_symbol}")
+                volume = signal.get("volume", 0.01)
+                sl = signal.get("sl", 150)
+                tp = signal.get("tp", 300)
+
+                # Execute REAL trade on MT5
+                from .dbtp_dbbtm import place_real_mt5_trade
+                success, msg = place_real_mt5_trade(mt5_symbol, action, volume, sl, tp)
+
+                if success:
+                    Trade.objects.create(
+                        user=user, symbol=mt5_symbol, type=action,
+                        quantity=volume, entryPrice=0.0, currentPrice=0.0,
+                        pnl=0.0, status='OPEN'
+                    )
+                    _bot_log(user_id, f"[{now_str}] Trade placed on MT5! {action} {mt5_symbol} vol={volume} SL={sl} TP={tp}")
+                    _bot_log(user_id, f"[{now_str}] MT5 Response: {msg}")
+                else:
+                    _bot_log(user_id, f"[{now_str}] Trade failed: {msg}")
+
+            elif action in ["CLOSE_BUY", "CLOSE_SELL"]:
+                _bot_log(user_id, f"[{now_str}] Signal to {action} on {mt5_symbol} (opposing position)")
+            else:
+                _bot_log(user_id, f"[{now_str}] No pattern on {mt5_symbol} ({mt5_tf}). Next scan in 5s...")
+
+        except Exception as e:
+            _bot_log(user_id, f"Error: {e}")
+
+        # Sleep in small chunks so we can stop quickly
+        for _ in range(5):
+            if stop_event.is_set():
+                break
+            _time.sleep(1)
+
+    _bot_log(user_id, "Bot engine stopped.")
+
+
 class ToggleStrategyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         strategy_id = request.data.get('strategyId')
+        symbol = request.data.get('symbol')
+        timeframe = request.data.get('timeframe')
         user = request.user
         if strategy_id:
             try:
@@ -260,15 +358,60 @@ class ToggleStrategyView(APIView):
                 # Toggle: if already active, deactivate
                 if user.activeStrategy and user.activeStrategy.id == strategy.id:
                     user.activeStrategy = None
+                    user.active_symbol = None
+                    user.active_timeframe = None
                     user.save()
-                    return Response({'success': True, 'message': 'Strategy deactivated'})
+
+                    # Stop the background bot thread
+                    stop_event = _bot_threads.pop(user.id, None)
+                    if stop_event:
+                        stop_event.set()
+
+                    return Response({'success': True, 'message': 'Strategy stopped'})
                 else:
                     user.activeStrategy = strategy
+                    user.active_symbol = symbol
+                    user.active_timeframe = timeframe
                     user.save()
+
+                    # Stop any existing bot thread for this user first
+                    old_event = _bot_threads.pop(user.id, None)
+                    if old_event:
+                        old_event.set()
+
+                    # Clear old logs
+                    _bot_logs.pop(user.id, None)
+
+                    # Start a new background bot thread
+                    stop_event = threading.Event()
+                    _bot_threads[user.id] = stop_event
+                    t = threading.Thread(
+                        target=_run_bot_loop,
+                        args=(user.id, stop_event),
+                        daemon=True
+                    )
+                    t.start()
+
                     return Response({'success': True, 'message': 'Strategy activated', 'data': StrategySerializer(strategy).data})
             except Strategy.DoesNotExist:
                 return Response({'success': False, 'message': 'Strategy not found'}, status=404)
         return Response({'success': False, 'message': 'strategyId required'}, status=400)
+
+
+class BotStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        is_running = user.id in _bot_threads and not _bot_threads[user.id].is_set()
+        logs = list(_bot_logs.get(user.id, []))
+        return Response({
+            'success': True,
+            'running': is_running,
+            'symbol': user.active_symbol,
+            'timeframe': user.active_timeframe,
+            'logs': logs
+        })
 
 
 # ─────────────── Trades API ───────────────
@@ -471,3 +614,83 @@ class BacktestStrategyView(APIView):
             })
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)
+
+
+# ─────────────── Live Execution API ───────────────
+class ExecuteStrategyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        symbol = request.data.get('symbol')
+        timeframe = request.data.get('timeframe')
+
+        if not user.isExnessConnected:
+            return Response({'success': False, 'message': 'You must connect Exness first.'}, status=400)
+
+        # 1. Evaluate Strategy
+        signal = get_signal(symbol, timeframe)
+        
+        action = signal.get("action", "NONE")
+        if action == "NONE":
+            return Response({
+                'success': True, 
+                'message': f"No Double Top or Double Bottom pattern found on {symbol} ({timeframe}) right now.",
+                'trade_placed': False
+            })
+
+        # 2. Extract signal details
+        # For CLOSE_BUY/CLOSE_SELL, we would handle differently. Let's just handle BUY/SELL for now.
+        if action not in ["BUY", "SELL"]:
+            return Response({
+                'success': True, 
+                'message': f"Action '{action}' is not supported for manual execution yet.",
+                'trade_placed': False
+            })
+
+        volume = signal.get("volume", 0.01)
+        sl = signal.get("sl", 150)
+        tp = signal.get("tp", 300)
+
+        # 3. Connect to Exness and place trade
+        gateway = ExnessDummyGateway(
+            account_id=user.exnessAccountId,
+            password=user.exnessPassword,
+            server=user.exnessServer
+        )
+
+        try:
+            result = gateway.place_simulated_order(
+                symbol=symbol,
+                action_type=action,
+                volume=volume,
+                stop_loss_points=sl,
+                take_profit_points=tp
+            )
+        except Exception as e:
+            gateway.close_session()
+            return Response({'success': False, 'message': f"Failed to execute trade: {str(e)}"}, status=500)
+
+        gateway.close_session()
+
+        if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
+            reason = result.comment if result else "Unknown MT5 Error"
+            return Response({'success': False, 'message': f"Exness rejected trade: {reason}"}, status=400)
+
+        # 4. Save to Django DB
+        Trade.objects.create(
+            user=user,
+            symbol=symbol,
+            type=action,
+            quantity=volume,
+            entryPrice=result.price,
+            currentPrice=result.price,
+            pnl=0.0,
+            status='OPEN'
+        )
+
+        return Response({
+            'success': True,
+            'message': f"Successfully placed {action} trade on {symbol} at {result.price}!",
+            'trade_placed': True
+        })

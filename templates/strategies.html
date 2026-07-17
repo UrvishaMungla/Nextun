@@ -293,7 +293,7 @@
         </p>
 
         <div class="strategy-actions">
-          <button class="btn-activate" id="dt-activate-btn" onclick="toggleActivate()">⚡ Activate Strategy</button>
+          <button class="btn-activate" id="dt-execute-btn" onclick="executeLiveStrategy()">⚡ Run Live Strategy</button>
           <button class="btn-run-bt" id="dt-run-btn" onclick="runBacktest()">▶ Run Backtest</button>
         </div>
 
@@ -315,6 +315,7 @@
           <div>
             <label>Timeframe</label>
             <select id="bt-timeframe">
+              <option value="5m">5 Minutes</option>
               <option value="15m">15 Minutes</option>
               <option value="30m">30 Minutes</option>
               <option value="45m">45 Minutes</option>
@@ -524,6 +525,6 @@
     </div><!-- end strat-page -->
   </main>
 
-  <script src="{% static 'strategies.js' %}?v=20260624"></script>
+  <script src="{% static 'strategies.js' %}?v=20260717i"></script>
 </body>
 </html>

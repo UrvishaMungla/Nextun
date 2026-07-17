@@ -35,6 +35,62 @@ def shutdown():
     mt5.shutdown()
 
 
+def place_real_mt5_trade(symbol, action, volume, sl_points, tp_points):
+    """
+    Places a REAL trade on the connected MT5/Exness terminal.
+    sl_points and tp_points are the distance in points (e.g. 150 points).
+    """
+    if not initialize():
+        return False, "MT5 init failed"
+
+    symbol_info = mt5.symbol_info(symbol)
+    if symbol_info is None:
+        return False, f"{symbol} not found"
+
+    if not symbol_info.visible:
+        if not mt5.symbol_select(symbol, True):
+            return False, f"Could not enable {symbol}"
+
+    point = symbol_info.point
+    tick = mt5.symbol_info_tick(symbol)
+    if tick is None:
+        return False, f"No tick data for {symbol}"
+
+    if action == "BUY":
+        order_type = mt5.ORDER_TYPE_BUY
+        price = tick.ask
+        sl = price - (sl_points * point)
+        tp = price + (tp_points * point)
+    elif action == "SELL":
+        order_type = mt5.ORDER_TYPE_SELL
+        price = tick.bid
+        sl = price + (sl_points * point)
+        tp = price - (tp_points * point)
+    else:
+        return False, "Invalid action"
+
+    request = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": symbol,
+        "volume": float(volume),
+        "type": order_type,
+        "price": price,
+        "sl": sl,
+        "tp": tp,
+        "deviation": 20,
+        "magic": 999111,
+        "comment": "Nextun Bot",
+        "type_time": mt5.ORDER_TIME_GTC,
+        "type_filling": mt5.ORDER_FILLING_IOC,
+    }
+
+    result = mt5.order_send(request)
+    if result.retcode != mt5.TRADE_RETCODE_DONE:
+        return False, f"Trade error: {result.retcode} - {result.comment}"
+
+    return True, f"Placed at {result.price}"
+
+
 def get_rates(symbol, timeframe, bars=300):
 
     tf = TIMEFRAMES.get(timeframe, mt5.TIMEFRAME_M15)
@@ -89,13 +145,13 @@ def detect_double_top(df, highs, symbol):
     h1 = highs[-2]
     h2 = highs[-1]
 
-    if h2-h1 < 15 or h2-h1 > 45:
+    if h2-h1 < 5 or h2-h1 > 60:
         return None
 
     p1 = df.close.iloc[h1]
     p2 = df.close.iloc[h2]
 
-    if abs(p1-p2)/p1 > 0.003:
+    if abs(p1-p2)/p1 > 0.001:
         return None
 
     return {
@@ -114,13 +170,13 @@ def detect_double_bottom(df, lows, symbol):
     l1 = lows[-2]
     l2 = lows[-1]
 
-    if l2-l1 < 15 or l2-l1 > 45:
+    if l2-l1 < 5 or l2-l1 > 65:
         return None
 
     p1 = df.close.iloc[l1]
     p2 = df.close.iloc[l2]
 
-    if abs(p1-p2)/p1 > 0.003:
+    if abs(p1-p2)/p1 > 0.001:
         return None
 
     return {
@@ -214,7 +270,10 @@ def get_signal(symbol, timeframe):
         shutdown()
         return buy_signal
 
+    # No signal generated
     shutdown()
+    
+    print(f"[{symbol}] Scanned {len(highs)} highs & {len(lows)} lows. No valid Double Top/Bottom found yet.")
 
     return {
         "action": "NONE"
