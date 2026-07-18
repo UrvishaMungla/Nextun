@@ -5,7 +5,12 @@ class StrategyEngine:
         self.portfolio = None
 
     def update_market(self, market_data):
-        pass
+        print(
+            f"History cached: "
+            f"{market_data['symbol']} "
+            f"{market_data['timeframe']} "
+            f"{market_data['time']}"
+        )
 
 
     async def process(
