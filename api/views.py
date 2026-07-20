@@ -388,8 +388,16 @@ class ToggleStrategyView(APIView):
                     if stop_event:
                         stop_event.set()
 
+                    # Close actual open trades on MT5
                     from .models import Trade
-                    Trade.objects.filter(user=user, status='OPEN').update(status='CLOSED')
+                    from .dbtp_dbbtm import close_mt5_position
+                    
+                    open_trades = Trade.objects.filter(user=user, status='OPEN')
+                    for trade in open_trades:
+                        success, msg = close_mt5_position(trade.symbol)
+                        # Optionally log it or just let it close
+                        trade.status = 'CLOSED'
+                        trade.save()
 
                     return Response({'success': True, 'message': 'Strategy stopped'})
                 else:

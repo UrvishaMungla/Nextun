@@ -86,7 +86,6 @@ def place_real_mt5_trade(symbol, action, volume, sl_points, tp_points):
     """
     Places a REAL trade on the connected MT5/Exness terminal.
     sl_points and tp_points are the distance in points (e.g. 150 points).
-    SAFETY: Refuses to place if a position already exists on this symbol.
     """
     if not initialize():
         return False, "MT5 init failed"
