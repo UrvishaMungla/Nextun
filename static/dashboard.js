@@ -60,8 +60,28 @@ document.addEventListener('DOMContentLoaded', function() {
   function pad2(n) { return String(n).padStart(2, '0'); }
 
   // --- Dashboard Init ---
-  function initDashboard() {
+  async function initDashboard() {
     function fmt(val) { return (val >= 0 ? '+' : '') + parseFloat(val).toFixed(4); }
+    
+    // Sync active state with backend
+    try {
+      const token = localStorage.getItem('nextunToken');
+      if (token) {
+        const res = await fetch('/api/bot/status', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (data.running) {
+            localStorage.setItem('dt_strategy_active', 'true');
+            if (data.symbol) localStorage.setItem('dt_strategy_symbol', data.symbol);
+            if (data.timeframe) localStorage.setItem('dt_strategy_timeframe', data.timeframe);
+          } else {
+            localStorage.removeItem('dt_strategy_active');
+          }
+        }
+      }
+    } catch(e) {}
 
     // -- 1. Strategy Status Card --
     // FIX: Strategy is ONLY shown as Active when BOTH:
@@ -73,8 +93,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btTradesRaw) {
       try { hasBacktestData = JSON.parse(btTradesRaw).length > 0; } catch(e) {}
     }
-    // Only truly active if activated AND backtest was run
-    var isReallyActive = isStratActive && hasBacktestData;
+    // Show as active if the strategy is enabled by the user
+    var isReallyActive = isStratActive;
 
     var stratName    = localStorage.getItem('dt_strategy_name')      || 'No Active Strategy';
     var stratSymbol  = localStorage.getItem('dt_strategy_symbol')    || '';

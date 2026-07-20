@@ -43,10 +43,42 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/';
   });
 
-  // Restore activation state from localStorage
-  if (localStorage.getItem('dt_strategy_active') === 'true') {
-    setActiveState(true);
-  }
+  // Sync activation state with backend
+  (async function syncState() {
+    try {
+      const token = localStorage.getItem('nextunToken');
+      if (!token) return;
+      const res = await fetch('/api/bot/status', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.running) {
+          localStorage.setItem('dt_strategy_active', 'true');
+          setActiveState(true);
+          
+          // Also set the execute button state correctly
+          const execBtn = document.getElementById('dt-execute-btn');
+          const panel = document.getElementById('bot-panel');
+          if (execBtn) {
+            execBtn.textContent = 'Stop Live Strategy';
+            execBtn.classList.add('active-state');
+          }
+          if (panel) {
+            panel.style.display = 'block';
+          }
+          // Resume polling if running
+          const log = document.getElementById('bot-log');
+          if (log) {
+             startBotStatusPolling(token, log);
+          }
+        } else {
+          localStorage.removeItem('dt_strategy_active');
+          setActiveState(false);
+        }
+      }
+    } catch (e) {}
+  })();
   
   // Mobile Drawer
 const menuToggle = document.getElementById("menuToggle");
@@ -73,11 +105,10 @@ function setActiveState(isActive) {
     btn.className = 'btn-activate ' + (isActive ? 'active-state' : '');
   }
 
-  // Auto-toggle Bot switch based on Strategy Activation
+  // Auto-update Bot switch UI based on Strategy Activation
   const botToggle = document.getElementById('bot-toggle');
   if (botToggle && botToggle.checked !== isActive) {
     botToggle.checked = isActive;
-    toggleBot(botToggle);
   }
 }
 

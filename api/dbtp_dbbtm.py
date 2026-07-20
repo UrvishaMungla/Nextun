@@ -35,6 +35,53 @@ def shutdown():
     mt5.shutdown()
 
 
+def close_mt5_position(symbol):
+    """
+    Closes any open position for the given symbol on MT5.
+    """
+    if not initialize():
+        return False, "MT5 init failed"
+    
+    positions = mt5.positions_get(symbol=symbol)
+    if not positions or len(positions) == 0:
+        return True, "No open position to close"
+        
+    pos = positions[0]
+    ticket = pos.ticket
+    volume = pos.volume
+    pos_type = pos.type
+    
+    tick = mt5.symbol_info_tick(symbol)
+    if not tick:
+        return False, f"No tick data for {symbol}"
+        
+    if pos_type == mt5.ORDER_TYPE_BUY:
+        close_type = mt5.ORDER_TYPE_SELL
+        price = tick.bid
+    else:
+        close_type = mt5.ORDER_TYPE_BUY
+        price = tick.ask
+        
+    request = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": symbol,
+        "volume": float(volume),
+        "type": close_type,
+        "position": ticket,
+        "price": price,
+        "deviation": 20,
+        "magic": 999111,
+        "comment": "Nextun Bot Close",
+        "type_time": mt5.ORDER_TIME_GTC,
+        "type_filling": mt5.ORDER_FILLING_IOC,
+    }
+    
+    result = mt5.order_send(request)
+    if result.retcode != mt5.TRADE_RETCODE_DONE:
+        return False, f"Failed to close position: {result.retcode} - {result.comment}"
+        
+    return True, f"Position {ticket} closed at {result.price}"
+
 def place_real_mt5_trade(symbol, action, volume, sl_points, tp_points):
     """
     Places a REAL trade on the connected MT5/Exness terminal.
@@ -45,16 +92,16 @@ def place_real_mt5_trade(symbol, action, volume, sl_points, tp_points):
 
     symbol_info = mt5.symbol_info(symbol)
     if symbol_info is None:
-        return False, f"{symbol} not found"
+        return False, f"{symbol} not found", 0.0
 
     if not symbol_info.visible:
         if not mt5.symbol_select(symbol, True):
-            return False, f"Could not enable {symbol}"
+            return False, f"Could not enable {symbol}", 0.0
 
     point = symbol_info.point
     tick = mt5.symbol_info_tick(symbol)
     if tick is None:
-        return False, f"No tick data for {symbol}"
+        return False, f"No tick data for {symbol}", 0.0
 
     if action == "BUY":
         order_type = mt5.ORDER_TYPE_BUY
@@ -67,7 +114,7 @@ def place_real_mt5_trade(symbol, action, volume, sl_points, tp_points):
         sl = price + (sl_points * point)
         tp = price - (tp_points * point)
     else:
-        return False, "Invalid action"
+        return False, "Invalid action", 0.0
 
     request = {
         "action": mt5.TRADE_ACTION_DEAL,
@@ -86,9 +133,9 @@ def place_real_mt5_trade(symbol, action, volume, sl_points, tp_points):
 
     result = mt5.order_send(request)
     if result.retcode != mt5.TRADE_RETCODE_DONE:
-        return False, f"Trade error: {result.retcode} - {result.comment}"
+        return False, f"Trade error: {result.retcode} - {result.comment}", 0.0
 
-    return True, f"Placed at {result.price}"
+    return True, f"Placed at {result.price}", result.price
 
 
 def get_rates(symbol, timeframe, bars=300):
@@ -145,6 +192,10 @@ def detect_double_top(df, highs, symbol):
     h1 = highs[-2]
     h2 = highs[-1]
 
+    # Recent high should be within 15 candles
+    if (len(df) - 1) - h2 > 15:
+        return None
+
     if h2-h1 < 5 or h2-h1 > 60:
         return None
 
@@ -169,6 +220,10 @@ def detect_double_bottom(df, lows, symbol):
 
     l1 = lows[-2]
     l2 = lows[-1]
+
+    # Recent low should be within 15 candles
+    if (len(df) - 1) - l2 > 15:
+        return None
 
     if l2-l1 < 5 or l2-l1 > 65:
         return None

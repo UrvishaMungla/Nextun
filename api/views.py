@@ -314,12 +314,12 @@ def _run_bot_loop(user_id, stop_event):
 
                 # Execute REAL trade on MT5
                 from .dbtp_dbbtm import place_real_mt5_trade
-                success, msg = place_real_mt5_trade(mt5_symbol, action, volume, sl, tp)
+                success, msg, entry_price = place_real_mt5_trade(mt5_symbol, action, volume, sl, tp)
 
                 if success:
                     Trade.objects.create(
                         user=user, symbol=mt5_symbol, type=action,
-                        quantity=volume, entryPrice=0.0, currentPrice=0.0,
+                        quantity=volume, entryPrice=entry_price, currentPrice=entry_price,
                         pnl=0.0, status='OPEN'
                     )
                     _bot_log(user_id, f"[{now_str}] Trade placed on MT5! {action} {mt5_symbol} vol={volume} SL={sl} TP={tp}")
@@ -329,14 +329,25 @@ def _run_bot_loop(user_id, stop_event):
 
             elif action in ["CLOSE_BUY", "CLOSE_SELL"]:
                 _bot_log(user_id, f"[{now_str}] Signal to {action} on {mt5_symbol} (opposing position)")
+                from .dbtp_dbbtm import close_mt5_position
+                success, msg = close_mt5_position(mt5_symbol)
+                if success:
+                    _bot_log(user_id, f"[{now_str}] Successfully closed position on MT5! {msg}")
+                    # Update trade status in DB
+                    open_trades = Trade.objects.filter(user=user, symbol=mt5_symbol, status='OPEN')
+                    for t in open_trades:
+                        t.status = 'CLOSED'
+                        t.save()
+                else:
+                    _bot_log(user_id, f"[{now_str}] Failed to close position: {msg}")
             else:
-                _bot_log(user_id, f"[{now_str}] No pattern on {mt5_symbol} ({mt5_tf}). Next scan in 5s...")
+                _bot_log(user_id, f"[{now_str}] No pattern on {mt5_symbol} ({mt5_tf}). Next scan in 30s...")
 
         except Exception as e:
             _bot_log(user_id, f"Error: {e}")
 
         # Sleep in small chunks so we can stop quickly
-        for _ in range(5):
+        for _ in range(30):
             if stop_event.is_set():
                 break
             _time.sleep(1)
@@ -376,6 +387,17 @@ class ToggleStrategyView(APIView):
                     stop_event = _bot_threads.pop(user.id, None)
                     if stop_event:
                         stop_event.set()
+
+                    # Close actual open trades on MT5
+                    from .models import Trade
+                    from .dbtp_dbbtm import close_mt5_position
+                    
+                    open_trades = Trade.objects.filter(user=user, status='OPEN')
+                    for trade in open_trades:
+                        success, msg = close_mt5_position(trade.symbol)
+                        # Optionally log it or just let it close
+                        trade.status = 'CLOSED'
+                        trade.save()
 
                     return Response({'success': True, 'message': 'Strategy stopped'})
                 else:
@@ -429,6 +451,30 @@ class TradesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        try:
+            open_trades = Trade.objects.filter(user=request.user, status='OPEN')
+            if open_trades.exists():
+                import MetaTrader5 as mt5
+                from .dbtp_dbbtm import initialize
+                if initialize():
+                    for trade in open_trades:
+                        positions = mt5.positions_get(symbol=trade.symbol)
+                        found = False
+                        if positions:
+                            for pos in positions:
+                                pos_type = 'BUY' if pos.type == mt5.ORDER_TYPE_BUY else 'SELL'
+                                if pos_type == trade.type:
+                                    trade.currentPrice = pos.price_current
+                                    trade.pnl = pos.profit
+                                    trade.save()
+                                    found = True
+                                    break
+                        if not found:
+                            trade.status = 'CLOSED'
+                            trade.save()
+        except Exception as e:
+            print(f"Error syncing MT5 trades: {e}")
+
         filter_val = request.query_params.get('filter', 'ALL')
         sort_val = request.query_params.get('sort', 'DATE_DESC')
         trades = Trade.objects.filter(user=request.user)

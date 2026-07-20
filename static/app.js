@@ -994,3 +994,14 @@ document.getElementById('close-angelone-otp')?.addEventListener('click', () => {
       }
     });
   }
+
+  // Handle hash on page load to show the right tab
+  if (window.location.hash === '#login') {
+    signupView.classList.add('gone');
+    brokerView.classList.add('gone');
+    loginView.classList.remove('gone');
+  } else if (window.location.hash === '#signup') {
+    loginView.classList.add('gone');
+    brokerView.classList.add('gone');
+    signupView.classList.remove('gone');
+  }
