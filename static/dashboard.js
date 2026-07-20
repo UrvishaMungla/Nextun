@@ -73,8 +73,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btTradesRaw) {
       try { hasBacktestData = JSON.parse(btTradesRaw).length > 0; } catch(e) {}
     }
-    // Only truly active if activated AND backtest was run
-    var isReallyActive = isStratActive && hasBacktestData;
+    // Show as active if the strategy is enabled by the user
+    var isReallyActive = isStratActive;
 
     var stratName    = localStorage.getItem('dt_strategy_name')      || 'No Active Strategy';
     var stratSymbol  = localStorage.getItem('dt_strategy_symbol')    || '';

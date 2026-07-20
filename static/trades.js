@@ -143,9 +143,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const formattedEntry = t.entryPrice ? t.entryPrice.toFixed(5) : '0.00000';
       const formattedExit = t.currentPrice ? t.currentPrice.toFixed(5) : '-';
       
-      let statusColor = '#fee2e2';
-      let statusText = '#dc2626';
-      let statusLabel = 'OPEN';
+      let statusColor = '#f3f4f6';
+      let statusText = '#4b5563';
+      let statusLabel = 'CLOSED';
       if (t.status === 'OPEN') {
          statusColor = '#dbeafe'; statusText = '#2563eb'; statusLabel = 'OPEN';
       } else if (t.status === 'WIN' || t.pnl > 0) {
