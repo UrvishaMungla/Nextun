@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/';
   });
 
-  // Sync activation state with backend
+  // Sync activation state with backend — only ONE strategy can be active at a time
   (async function syncState() {
     try {
       const token = localStorage.getItem('nextunToken');
@@ -52,30 +52,61 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
-      if (data.success) {
-        if (data.running) {
-          localStorage.setItem('dt_strategy_active', 'true');
-          setActiveState(true);
-          
-          // Also set the execute button state correctly
-          const execBtn = document.getElementById('dt-execute-btn');
-          const panel = document.getElementById('bot-panel');
-          if (execBtn) {
-            execBtn.textContent = 'Stop Live Strategy';
-            execBtn.classList.add('active-state');
-          }
-          if (panel) {
-            panel.style.display = 'block';
-          }
-          // Resume polling if running
-          const log = document.getElementById('bot-log');
-          if (log) {
-             startBotStatusPolling(token, log);
-          }
-        } else {
-          localStorage.removeItem('dt_strategy_active');
-          setActiveState(false);
-        }
+      if (!data.success) return;
+
+      const isLT = data.strategy_name && data.strategy_name.includes('Liquidity');
+      const isDT = data.strategy_name && data.strategy_name.includes('Double');
+
+      if (data.running && isDT) {
+        // Double Top bot is running → activate DT card, deactivate LT card
+        localStorage.setItem('dt_strategy_active', 'true');
+        localStorage.removeItem('lt_strategy_active');
+        setActiveState(true);
+        ltSetActiveState(false);
+        const execBtn = document.getElementById('dt-execute-btn');
+        const panel   = document.getElementById('bot-panel');
+        if (execBtn) { execBtn.textContent = 'Stop Live Strategy'; execBtn.classList.add('active-state'); }
+        if (panel)   { panel.style.display = 'block'; }
+        const log = document.getElementById('bot-log');
+        if (log) startBotStatusPolling(token, log);
+
+      } else if (data.running && isLT) {
+        // Liquidity Trap bot is running → activate LT card, deactivate DT card
+        localStorage.removeItem('dt_strategy_active');
+        localStorage.setItem('lt_strategy_active', 'true');
+        setActiveState(false);
+        ltSetActiveState(true);
+        // Reset DT execute button to default
+        const execBtn = document.getElementById('dt-execute-btn');
+        const panel   = document.getElementById('bot-panel');
+        if (execBtn) { execBtn.textContent = 'Run Live Strategy'; execBtn.classList.remove('active-state'); }
+        if (panel)   { panel.style.display = 'none'; }
+        // Resume LT bot log polling
+        const ltLog = document.getElementById('lt-bot-log');
+        const ltPanel = document.getElementById('lt-bot-panel');
+        const ltLabel = document.getElementById('lt-bot-label-text');
+        if (ltPanel) ltPanel.style.display = 'block';
+        if (ltLabel) { ltLabel.textContent = 'Bot: ACTIVE 🟢'; ltLabel.style.color = '#16a34a'; }
+        const ltToggle = document.getElementById('lt-bot-toggle');
+        if (ltToggle) ltToggle.checked = true;
+        if (ltLog) startBotStatusPolling(token, ltLog);
+
+      } else {
+        // Nothing running — reset both cards to inactive state
+        localStorage.removeItem('dt_strategy_active');
+        localStorage.removeItem('lt_strategy_active');
+        setActiveState(false);
+        ltSetActiveState(false);
+        const execBtn = document.getElementById('dt-execute-btn');
+        if (execBtn) { execBtn.textContent = 'Run Live Strategy'; execBtn.classList.remove('active-state'); }
+        const panel = document.getElementById('bot-panel');
+        if (panel) panel.style.display = 'none';
+        const ltPanel = document.getElementById('lt-bot-panel');
+        const ltLabel = document.getElementById('lt-bot-label-text');
+        const ltToggle = document.getElementById('lt-bot-toggle');
+        if (ltPanel)  ltPanel.style.display = 'none';
+        if (ltLabel)  { ltLabel.textContent = 'Bot: OFF'; ltLabel.style.color = ''; }
+        if (ltToggle) ltToggle.checked = false;
       }
     } catch (e) {}
   })();
@@ -118,6 +149,17 @@ function toggleActivate() {
   localStorage.setItem('dt_strategy_active', next ? 'true' : 'false');
 
   if (next) {
+    // ── EXCLUSIVE: Kill Liquidity Trap UI completely ──
+    localStorage.removeItem('lt_strategy_active');
+    ltSetActiveState(false);
+    const ltPanel  = document.getElementById('lt-bot-panel');
+    const ltLabel  = document.getElementById('lt-bot-label-text');
+    const ltToggle = document.getElementById('lt-bot-toggle');
+    if (ltPanel)  ltPanel.style.display = 'none';
+    if (ltLabel)  { ltLabel.textContent = 'Bot: OFF'; ltLabel.style.color = ''; }
+    if (ltToggle) ltToggle.checked = false;
+    if (typeof ltBotInterval !== 'undefined' && ltBotInterval) { clearInterval(ltBotInterval); ltBotInterval = null; }
+
     // Save strategy info for Dashboard to read
     const symbol = document.getElementById('bt-symbol')?.value || 'EURUSD=X';
     const timeframe = document.getElementById('bt-timeframe')?.value || '1h';
@@ -142,6 +184,7 @@ function toggleActivate() {
     runBacktest();
   }
 }
+
 
 let botStatusInterval = null;
 
@@ -507,16 +550,16 @@ function ltToggleActivate() {
   localStorage.setItem('lt_strategy_active', next ? 'true' : 'false');
 
   if (next) {
-    const symbol = document.getElementById('lt-symbol')?.value || 'EURUSD=X';
-    const timeframe = document.getElementById('lt-timeframe')?.value || '5m';
-    localStorage.setItem('dt_strategy_name', 'Liquidity Trap');
-    localStorage.setItem('dt_strategy_symbol', symbol);
-    localStorage.setItem('dt_strategy_timeframe', timeframe);
-    localStorage.setItem('dt_strategy_rr', '1:2');
-    if (localStorage.getItem('dt_strategy_active') === 'true') {
-      localStorage.setItem('dt_strategy_active', 'false');
-      setActiveState(false);
-    }
+    // ── EXCLUSIVE: Kill Double Top UI completely ──
+    localStorage.removeItem('dt_strategy_active');
+    setActiveState(false);
+    const dtExecBtn = document.getElementById('dt-execute-btn');
+    const dtPanel   = document.getElementById('bot-panel');
+    if (dtExecBtn) { dtExecBtn.textContent = 'Run Live Strategy'; dtExecBtn.classList.remove('active-state'); }
+    if (dtPanel)   { dtPanel.style.display = 'none'; }
+    if (botStatusInterval) { clearInterval(botStatusInterval); botStatusInterval = null; }
+
+    // Set LT as active
     ltSetActiveState(true);
     ltRunBacktest();
   } else {
@@ -527,6 +570,14 @@ function ltToggleActivate() {
     localStorage.removeItem('bt_trades');
     localStorage.removeItem('bt_summary');
     ltSetActiveState(false);
+    // Also hide LT bot panel if open
+    const ltPanel = document.getElementById('lt-bot-panel');
+    const ltLabel = document.getElementById('lt-bot-label-text');
+    const ltToggle = document.getElementById('lt-bot-toggle');
+    if (ltPanel)  ltPanel.style.display = 'none';
+    if (ltLabel)  { ltLabel.textContent = 'Bot: OFF'; ltLabel.style.color = ''; }
+    if (ltToggle) ltToggle.checked = false;
+    if (ltBotInterval) { clearInterval(ltBotInterval); ltBotInterval = null; }
   }
 }
 

@@ -63,46 +63,6 @@ document.addEventListener('DOMContentLoaded', function() {
   async function initDashboard() {
     function fmt(val) { return (val >= 0 ? '+' : '') + parseFloat(val).toFixed(4); }
     
-    // Sync active state with backend
-    try {
-      const token = localStorage.getItem('nextunToken');
-      if (token) {
-        const res = await fetch('/api/bot/status', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.success) {
-          if (data.running) {
-            localStorage.setItem('dt_strategy_active', 'true');
-            if (data.symbol) localStorage.setItem('dt_strategy_symbol', data.symbol);
-            if (data.timeframe) localStorage.setItem('dt_strategy_timeframe', data.timeframe);
-            if (data.strategy_name) localStorage.setItem('dt_strategy_name', data.strategy_name);
-          } else {
-            localStorage.removeItem('dt_strategy_active');
-          }
-        }
-      }
-    } catch(e) {}
-
-    // -- 1. Strategy Status Card --
-    // FIX: Strategy is ONLY shown as Active when BOTH:
-    //   (a) dt_strategy_active === 'true'  (user clicked Activate)
-    //   (b) bt_trades has actual trade data (backtest was run, not just activated)
-    var isStratActive = localStorage.getItem('dt_strategy_active') === 'true';
-    var btTradesRaw   = localStorage.getItem('bt_trades');
-    var hasBacktestData = false;
-    if (btTradesRaw) {
-      try { hasBacktestData = JSON.parse(btTradesRaw).length > 0; } catch(e) {}
-    }
-    // Show as active if the strategy is enabled by the user
-    var isReallyActive = isStratActive;
-
-    var stratName    = localStorage.getItem('dt_strategy_name')      || 'No Active Strategy';
-    var stratSymbol  = localStorage.getItem('dt_strategy_symbol')    || '';
-    var stratTf      = localStorage.getItem('dt_strategy_timeframe') || '';
-    var stratWinRate = localStorage.getItem('dt_strategy_winrate')   || '--';
-    var stratRR      = localStorage.getItem('dt_strategy_rr')        || '1:2';
-
     var nameEl = document.getElementById('dash-strategy-name');
     var descEl = document.getElementById('dash-strategy-desc');
     var swEl   = document.getElementById('dash-strategy-switch');
@@ -110,18 +70,33 @@ document.addEventListener('DOMContentLoaded', function() {
     var wrEl   = document.getElementById('dash-strategy-winrate');
     var rrEl   = document.getElementById('dash-strategy-rr');
 
-    if (isReallyActive && stratName !== 'No Active Strategy') {
-      if (nameEl) nameEl.textContent = stratName;
-      if (descEl) descEl.textContent = stratSymbol + ' | ' + stratTf + ' | Auto-Running';
-      if (wrEl)   wrEl.textContent   = stratWinRate;
-      if (rrEl)   rrEl.textContent   = stratRR;
-      if (swEl)   swEl.style.display = 'block';
-      if (smEl)   smEl.style.display = 'flex';
-    } else {
-      if (nameEl) nameEl.textContent = 'No Active Strategy';
-      if (descEl) descEl.textContent = 'Navigate to the Strategies page to enable one.';
-      if (swEl)   swEl.style.display = 'none';
-      if (smEl)   smEl.style.display = 'none';
+    // Default state: No Active Strategy
+    if (nameEl) nameEl.textContent = 'No Active Strategy';
+    if (descEl) descEl.textContent = 'Navigate to the Strategies page to enable one.';
+    if (swEl)   swEl.style.display = 'none';
+    if (smEl)   smEl.style.display = 'none';
+
+    // 1. Fetch real active strategy state directly from Database/Backend
+    try {
+      const token = localStorage.getItem('nextunToken');
+      if (token) {
+        const res = await fetch('/api/bot/status', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        // If the backend says a strategy is actively running, update the UI dynamically
+        if (data.success && data.running && data.strategy_name) {
+            if (nameEl) nameEl.textContent = data.strategy_name;
+            if (descEl) descEl.textContent = `${data.symbol || ''} | ${data.timeframe || ''} | Auto-Running`;
+            if (wrEl)   wrEl.textContent   = data.success_rate || '--';
+            if (rrEl)   rrEl.textContent   = data.risk_reward || '1:2';
+            if (swEl)   swEl.style.display = 'block';
+            if (smEl)   smEl.style.display = 'flex';
+        }
+      }
+    } catch(e) {
+      console.error("Failed to sync dashboard strategy state from DB", e);
     }
 
     // -- 2. P&L Cards --

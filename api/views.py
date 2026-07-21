@@ -381,45 +381,40 @@ class ToggleStrategyView(APIView):
                         'riskReward': '1:2'
                     }
                 )
-                # Toggle: if already active, deactivate
+
+                # EXCLUSIVE MODE: Always stop any existing bot thread first (regardless of strategy)
+                old_event = _bot_threads.pop(user.id, None)
+                if old_event:
+                    old_event.set()
+                _bot_logs.pop(user.id, None)
+
+                # Toggle: if the SAME strategy is already active → deactivate
                 if user.activeStrategy and user.activeStrategy.id == strategy.id:
                     user.activeStrategy = None
                     user.active_symbol = None
                     user.active_timeframe = None
                     user.save()
 
-                    # Stop the background bot thread
-                    stop_event = _bot_threads.pop(user.id, None)
-                    if stop_event:
-                        stop_event.set()
-
                     # Close actual open trades on MT5
                     from .models import Trade
                     from .dbtp_dbbtm import close_mt5_position
-                    
+
                     open_trades = Trade.objects.filter(user=user, status='OPEN')
                     for trade in open_trades:
                         success, msg = close_mt5_position(trade.symbol)
-                        # Optionally log it or just let it close
                         trade.status = 'CLOSED'
                         trade.save()
 
                     return Response({'success': True, 'message': 'Strategy stopped'})
+
+                # Different or no strategy active → activate the new one
                 else:
                     user.activeStrategy = strategy
                     user.active_symbol = symbol
                     user.active_timeframe = timeframe
                     user.save()
 
-                    # Stop any existing bot thread for this user first
-                    old_event = _bot_threads.pop(user.id, None)
-                    if old_event:
-                        old_event.set()
-
-                    # Clear old logs
-                    _bot_logs.pop(user.id, None)
-
-                    # Start a new background bot thread
+                    # Start a new background bot thread for the selected strategy
                     stop_event = threading.Event()
                     _bot_threads[user.id] = stop_event
                     t = threading.Thread(
@@ -435,12 +430,25 @@ class ToggleStrategyView(APIView):
         return Response({'success': False, 'message': 'strategyId required'}, status=400)
 
 
+
 class BotStatusView(APIView):
     permission_classes = [IsAuthenticated]
-
+ 
     def get(self, request):
         user = request.user
         is_running = user.id in _bot_threads and not _bot_threads[user.id].is_set()
+       
+        if user.activeStrategy and not is_running:
+            stop_event = threading.Event()
+            _bot_threads[user.id] = stop_event
+            t = threading.Thread(
+                target=_run_bot_loop,
+                args=(user.id, stop_event),
+                daemon=True
+            )
+            t.start()
+            is_running = True
+            
         logs = list(_bot_logs.get(user.id, []))
         return Response({
             'success': True,
@@ -448,6 +456,8 @@ class BotStatusView(APIView):
             'symbol': user.active_symbol,
             'timeframe': user.active_timeframe,
             'strategy_name': user.activeStrategy.name if user.activeStrategy else None,
+            'success_rate': user.activeStrategy.successRate if user.activeStrategy else None,
+            'risk_reward': user.activeStrategy.riskReward if user.activeStrategy else None,
             'logs': logs
         })
 
