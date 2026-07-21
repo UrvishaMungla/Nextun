@@ -492,11 +492,11 @@ function ltSetActiveState(isActive) {
   const badge = document.getElementById('lt-status-badge');
   const btn = document.getElementById('lt-activate-btn');
   if (badge) {
-    badge.textContent = isActive ? '? Active' : 'Available';
+    badge.textContent = isActive ? '✓ Active' : 'Available';
     badge.className = 'strategy-badge ' + (isActive ? 'badge-active' : 'badge-available');
   }
   if (btn) {
-    btn.textContent = isActive ? '? Deactivate Strategy' : '? Activate Strategy';
+    btn.textContent = isActive ? '⏹ Deactivate Strategy' : '⚡ Activate Strategy';
     btn.className = 'btn-activate ' + (isActive ? 'active-state' : '');
   }
 }
@@ -588,12 +588,12 @@ async function ltRunBacktest() {
       tradeSection.style.display = 'block';
       tradeSection.innerHTML = `
         <div style="text-align:center;padding:20px;background:var(--bg-color);border-radius:12px;border:1px solid var(--border-color);">
-          <div style="font-size:28px;margin-bottom:8px;">?</div>
+          <div style="font-size:28px;margin-bottom:8px;">✅</div>
           <div style="font-size:15px;font-weight:700;color:var(--text-dark);margin-bottom:6px;">${d.total_trades} trades saved for ${d.symbol} (Liquidity Trap)</div>
           <div style="font-size:13px;color:var(--text-gray);margin-bottom:14px;">
-            ${d.wins} Full Wins � ${d.partials || 0} Partial Wins � ${d.losses} Losses � Win Rate: ${d.win_rate}% � Net P&L: ${d.total_pnl >= 0 ? '+' : ''}${d.total_pnl.toFixed(4)}
+            ${d.wins} Full Wins · ${d.partials || 0} Partial Wins · ${d.losses} Losses · Win Rate: ${d.win_rate}% · Net P&L: ${d.total_pnl >= 0 ? '+' : ''}${d.total_pnl.toFixed(4)}
           </div>
-          <a href="/trades" style="display:inline-block;padding:10px 24px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:white;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">?? View All Trades in Trades Page ?</a>
+          <a href="/trades" style="display:inline-block;padding:10px 24px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:white;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">📋 View All Trades in Trades Page →</a>
         </div>`;
     }
   } catch (err) {
@@ -608,42 +608,89 @@ async function ltRunBacktest() {
 
 let ltBotInterval = null;
 
-function ltToggleBot(checkbox) {
+async function ltToggleBot(checkbox) {
   const panel = document.getElementById('lt-bot-panel');
   const label = document.getElementById('lt-bot-label-text');
   const log = document.getElementById('lt-bot-log');
-  if (checkbox.checked) {
-    panel.style.display = 'block';
-    label.textContent = 'Bot: ACTIVE ??';
-    label.style.color = '#16a34a';
-    log.innerHTML = '';
-    const sym = document.getElementById('lt-symbol').value;
-    const tf = document.getElementById('lt-timeframe').value;
-    ltAddLog(`[SYSTEM] Liquidity Trap Bot started. Monitoring ${sym} on ${tf}...`);
-    ltBotInterval = setInterval(() => {
-      const rand = Math.random();
-      const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
-      const price = (Math.random() * 0.5 + 1.05).toFixed(5);
-      const sl = (parseFloat(price) - 0.0015).toFixed(5);
-      const tp = (parseFloat(price) + 0.0030).toFixed(5);
-      const pool = (parseFloat(price) - 0.0020).toFixed(5);
-      if (rand < 0.10) {
-        ltAddLog(`[${now}] ?? SWEEP below pool ${pool} | LONG ENTRY @ ${price} | SL: ${sl} | TP: ${tp}`);
-      } else if (rand < 0.20) {
-        const ep = (Math.random() * 0.5 + 1.05).toFixed(5);
-        const s = (parseFloat(ep) + 0.0015).toFixed(5);
-        const t = (parseFloat(ep) - 0.0030).toFixed(5);
-        ltAddLog(`[${now}] ?? SWEEP above pool | SHORT ENTRY @ ${ep} | SL: ${s} | TP: ${t}`);
+  
+  const token = localStorage.getItem('nextunToken');
+  if (!token) {
+    alert("Please log in first to run the live strategy.");
+    checkbox.checked = false;
+    return;
+  }
+  
+  const symbol = document.getElementById('lt-symbol').value;
+  const timeframe = document.getElementById('lt-timeframe').value;
+
+  checkbox.disabled = true;
+
+  try {
+    const stratRes = await fetch('/api/strategies', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const stratData = await stratRes.json();
+    let strategyId = 2; // Default to 2 for Liquidity Trap
+    if (stratData.success && stratData.data && stratData.data.strategies) {
+      const strat = stratData.data.strategies.find(s => s.name.includes("Liquidity"));
+      if (strat) strategyId = strat.id;
+    }
+
+    const res = await fetch('/api/strategies/toggle', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      },
+      body: JSON.stringify({ strategyId, symbol, timeframe })
+    });
+
+    const data = await res.json();
+    
+    if (data.success) {
+      if (data.message === 'Strategy activated') {
+        panel.style.display = 'block';
+        label.textContent = 'Bot: ACTIVE 🟢';
+        label.style.color = '#16a34a';
+        log.innerHTML = '';
+        ltAddLog(`[SYSTEM] Real Liquidity Trap Bot activated on ${symbol} (${timeframe}). Live logs will appear below...`);
+        
+        // Sync Dashboard variables
+        localStorage.setItem('dt_strategy_active', 'true');
+        localStorage.setItem('dt_strategy_name', 'Liquidity Trap & Inducement');
+        localStorage.setItem('dt_strategy_symbol', symbol);
+        localStorage.setItem('dt_strategy_timeframe', timeframe);
+        localStorage.setItem('dt_strategy_rr', '1:2');
+
+        startBotStatusPolling(token, log); // Uses the same polling logic as Double Top
       } else {
-        ltAddLog(`[${now}] ?? Monitoring ${sym} (${tf})... Waiting for sweep signal.`);
+        label.textContent = 'Bot: OFF';
+        label.style.color = '';
+        ltAddLog('[SYSTEM] Bot stopped.');
+        
+        if (botStatusInterval) {
+          clearInterval(botStatusInterval);
+          botStatusInterval = null;
+        }
+
+        setTimeout(() => { panel.style.display = 'none'; }, 2000);
+        
+        // Remove Dashboard variables
+        localStorage.setItem('dt_strategy_active', 'false');
+        localStorage.removeItem('dt_strategy_name');
+        localStorage.removeItem('dt_strategy_symbol');
+        localStorage.removeItem('dt_strategy_timeframe');
       }
-    }, 3500);
-  } else {
-    clearInterval(ltBotInterval);
-    ltBotInterval = null;
-    panel.style.display = 'none';
-    label.textContent = 'Bot: OFF';
-    label.style.color = '';
+    } else {
+      alert("Error: " + (data.message || 'Unknown error'));
+      checkbox.checked = !checkbox.checked; // Revert
+    }
+  } catch (err) {
+    console.error('Toggle failed:', err);
+    alert('Network error while toggling strategy.');
+    checkbox.checked = !checkbox.checked; // Revert
+  } finally {
+    checkbox.disabled = false;
   }
 }
 

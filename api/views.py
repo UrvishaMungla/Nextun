@@ -303,6 +303,11 @@ def _run_bot_loop(user_id, stop_event):
             now_str = datetime.now().strftime("%H:%M:%S")
             _bot_log(user_id, f"[{now_str}] Scanning {mt5_symbol} ({mt5_tf}) — fetching 300 candles from MT5...")
 
+            if user.activeStrategy.name == 'Liquidity Trap & Inducement':
+                from .liquidity_trap_mt5 import get_signal
+            else:
+                from .dbtp_dbbtm import get_signal
+
             signal = get_signal(mt5_symbol, mt5_tf)
             action = signal.get("action", "NONE")
 
@@ -685,13 +690,19 @@ class ExecuteStrategyView(APIView):
             return Response({'success': False, 'message': 'You must connect Exness first.'}, status=400)
 
         # 1. Evaluate Strategy
+        if user.activeStrategy and user.activeStrategy.name == 'Liquidity Trap & Inducement':
+            from .liquidity_trap_mt5 import get_signal
+        else:
+            from .dbtp_dbbtm import get_signal
+
         signal = get_signal(symbol, timeframe)
         
         action = signal.get("action", "NONE")
         if action == "NONE":
+            strategy_name = user.activeStrategy.name if user.activeStrategy else "selected strategy"
             return Response({
                 'success': True, 
-                'message': f"No Double Top or Double Bottom pattern found on {symbol} ({timeframe}) right now.",
+                'message': f"No {strategy_name} pattern found on {symbol} ({timeframe}) right now.",
                 'trade_placed': False
             })
 
