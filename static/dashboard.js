@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('dt_strategy_active', 'true');
             if (data.symbol) localStorage.setItem('dt_strategy_symbol', data.symbol);
             if (data.timeframe) localStorage.setItem('dt_strategy_timeframe', data.timeframe);
+            if (data.strategy_name) localStorage.setItem('dt_strategy_name', data.strategy_name);
           } else {
             localStorage.removeItem('dt_strategy_active');
           }

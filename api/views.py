@@ -447,6 +447,7 @@ class BotStatusView(APIView):
             'running': is_running,
             'symbol': user.active_symbol,
             'timeframe': user.active_timeframe,
+            'strategy_name': user.activeStrategy.name if user.activeStrategy else None,
             'logs': logs
         })
 
