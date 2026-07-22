@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('logout-btn')?.addEventListener('click', (e) => {
     e.preventDefault();
     sessionStorage.removeItem('nextunToken');
-    localStorage.removeItem('dt_strategy_active');
+    sessionStorage.removeItem('dt_strategy_active');
     window.location.href = '/';
   });
 
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (data.success) {
         if (data.running) {
-          localStorage.setItem('dt_strategy_active', 'true');
+          sessionStorage.setItem('dt_strategy_active', 'true');
           setActiveState(true);
           
           // Also set the execute button state correctly
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
              startBotStatusPolling(token, log);
           }
         } else {
-          localStorage.removeItem('dt_strategy_active');
+          sessionStorage.removeItem('dt_strategy_active');
           setActiveState(false);
         }
       }
@@ -113,26 +113,26 @@ function setActiveState(isActive) {
 }
 
 function toggleActivate() {
-  const current = localStorage.getItem('dt_strategy_active') === 'true';
+  const current = sessionStorage.getItem('dt_strategy_active') === 'true';
   const next = !current;
-  localStorage.setItem('dt_strategy_active', next ? 'true' : 'false');
+  sessionStorage.setItem('dt_strategy_active', next ? 'true' : 'false');
 
   if (next) {
     // Save strategy info for Dashboard to read
     const symbol = document.getElementById('bt-symbol')?.value || 'EURUSD=X';
     const timeframe = document.getElementById('bt-timeframe')?.value || '1h';
-    localStorage.setItem('dt_strategy_name', 'Double Top / Double Bottom');
-    localStorage.setItem('dt_strategy_symbol', symbol);
-    localStorage.setItem('dt_strategy_timeframe', timeframe);
-    localStorage.setItem('dt_strategy_rr', '1:2');
+    sessionStorage.setItem('dt_strategy_name', 'Double Top / Double Bottom');
+    sessionStorage.setItem('dt_strategy_symbol', symbol);
+    sessionStorage.setItem('dt_strategy_timeframe', timeframe);
+    sessionStorage.setItem('dt_strategy_rr', '1:2');
   } else {
-    localStorage.removeItem('dt_strategy_name');
-    localStorage.removeItem('dt_strategy_symbol');
-    localStorage.removeItem('dt_strategy_timeframe');
-    localStorage.removeItem('dt_strategy_winrate');
+    sessionStorage.removeItem('dt_strategy_name');
+    sessionStorage.removeItem('dt_strategy_symbol');
+    sessionStorage.removeItem('dt_strategy_timeframe');
+    sessionStorage.removeItem('dt_strategy_winrate');
     // Clear backtest trades so Trades page goes back to empty state
-    localStorage.removeItem('bt_trades');
-    localStorage.removeItem('bt_summary');
+    sessionStorage.removeItem('bt_trades');
+    sessionStorage.removeItem('bt_summary');
   }
 
   setActiveState(next);
@@ -195,11 +195,11 @@ async function executeLiveStrategy() {
         addLog('[SYSTEM] Bot activated! Live logs will appear below...');
         
         // Save to Dashboard
-        localStorage.setItem('dt_strategy_active', 'true');
-        localStorage.setItem('dt_strategy_name', 'Double Top / Double Bottom');
-        localStorage.setItem('dt_strategy_symbol', symbol);
-        localStorage.setItem('dt_strategy_timeframe', timeframe);
-        localStorage.setItem('dt_strategy_rr', '1:2');
+        sessionStorage.setItem('dt_strategy_active', 'true');
+        sessionStorage.setItem('dt_strategy_name', 'Double Top / Double Bottom');
+        sessionStorage.setItem('dt_strategy_symbol', symbol);
+        sessionStorage.setItem('dt_strategy_timeframe', timeframe);
+        sessionStorage.setItem('dt_strategy_rr', '1:2');
 
         // Start polling bot status every 5 seconds
         startBotStatusPolling(token, log);
@@ -220,10 +220,10 @@ async function executeLiveStrategy() {
         setTimeout(() => { panel.style.display = 'none'; }, 2000);
         
         // Remove from Dashboard
-        localStorage.setItem('dt_strategy_active', 'false');
-        localStorage.removeItem('dt_strategy_name');
-        localStorage.removeItem('dt_strategy_symbol');
-        localStorage.removeItem('dt_strategy_timeframe');
+        sessionStorage.setItem('dt_strategy_active', 'false');
+        sessionStorage.removeItem('dt_strategy_name');
+        sessionStorage.removeItem('dt_strategy_symbol');
+        sessionStorage.removeItem('dt_strategy_timeframe');
       }
     } else {
       alert("Error: " + (data.message || 'Unknown error'));
@@ -276,7 +276,7 @@ function startBotStatusPolling(token, logEl) {
 
 // ─── Run Backtest ──────────────────────────────────────────────
 async function runBacktest() {
-  const isStratActive = localStorage.getItem('dt_strategy_active') === 'true';
+  const isStratActive = sessionStorage.getItem('dt_strategy_active') === 'true';
   if (!isStratActive) {
     alert("Please click '⚡ Activate Strategy' first to enable the engine and generate trades.");
     return;
@@ -328,8 +328,8 @@ async function runBacktest() {
 
     // ── Save symbol into each trade & save to localStorage ──
     const tradesWithSymbol = (d.trades || []).map(t => ({ ...t, symbol: d.symbol }));
-    localStorage.setItem('bt_trades', JSON.stringify(tradesWithSymbol));
-    localStorage.setItem('bt_summary', JSON.stringify({
+    sessionStorage.setItem('bt_trades', JSON.stringify(tradesWithSymbol));
+    sessionStorage.setItem('bt_summary', JSON.stringify({
       symbol: d.symbol,
       timeframe: d.timeframe,
       total_trades: d.total_trades,
@@ -339,9 +339,9 @@ async function runBacktest() {
       total_pnl: d.total_pnl,
       strategy_name: 'Double Top / Double Bottom'
     }));
-    localStorage.setItem('dt_strategy_winrate', d.win_rate + '%');
-    localStorage.setItem('dt_strategy_symbol', d.symbol);
-    localStorage.setItem('dt_strategy_timeframe', d.timeframe);
+    sessionStorage.setItem('dt_strategy_winrate', d.win_rate + '%');
+    sessionStorage.setItem('dt_strategy_symbol', d.symbol);
+    sessionStorage.setItem('dt_strategy_timeframe', d.timeframe);
 
     // ── Show success banner with link to Trades page (no table here) ──
     const tradeSection = document.getElementById('bt-trade-section');
@@ -426,11 +426,11 @@ async function toggleBot(checkbox) {
         addLog('[SYSTEM] Real Backend Bot activated! Live logs will appear below...');
         
         // Sync Dashboard variables
-        localStorage.setItem('dt_strategy_active', 'true');
-        localStorage.setItem('dt_strategy_name', 'Double Top / Double Bottom');
-        localStorage.setItem('dt_strategy_symbol', symbol);
-        localStorage.setItem('dt_strategy_timeframe', timeframe);
-        localStorage.setItem('dt_strategy_rr', '1:2');
+        sessionStorage.setItem('dt_strategy_active', 'true');
+        sessionStorage.setItem('dt_strategy_name', 'Double Top / Double Bottom');
+        sessionStorage.setItem('dt_strategy_symbol', symbol);
+        sessionStorage.setItem('dt_strategy_timeframe', timeframe);
+        sessionStorage.setItem('dt_strategy_rr', '1:2');
 
         startBotStatusPolling(token, log);
       } else {
@@ -446,10 +446,10 @@ async function toggleBot(checkbox) {
         setTimeout(() => { panel.style.display = 'none'; }, 2000);
         
         // Remove Dashboard variables
-        localStorage.setItem('dt_strategy_active', 'false');
-        localStorage.removeItem('dt_strategy_name');
-        localStorage.removeItem('dt_strategy_symbol');
-        localStorage.removeItem('dt_strategy_timeframe');
+        sessionStorage.setItem('dt_strategy_active', 'false');
+        sessionStorage.removeItem('dt_strategy_name');
+        sessionStorage.removeItem('dt_strategy_symbol');
+        sessionStorage.removeItem('dt_strategy_timeframe');
       }
     } else {
       alert("Error: " + (data.message || 'Unknown error'));
@@ -483,7 +483,7 @@ function addLog(msg) {
 
 // Restore LT state on page load
 (function () {
-  if (localStorage.getItem('lt_strategy_active') === 'true') {
+  if (sessionStorage.getItem('lt_strategy_active') === 'true') {
     ltSetActiveState(true);
   }
 })();
@@ -502,36 +502,36 @@ function ltSetActiveState(isActive) {
 }
 
 function ltToggleActivate() {
-  const current = localStorage.getItem('lt_strategy_active') === 'true';
+  const current = sessionStorage.getItem('lt_strategy_active') === 'true';
   const next = !current;
-  localStorage.setItem('lt_strategy_active', next ? 'true' : 'false');
+  sessionStorage.setItem('lt_strategy_active', next ? 'true' : 'false');
 
   if (next) {
     const symbol = document.getElementById('lt-symbol')?.value || 'EURUSD=X';
     const timeframe = document.getElementById('lt-timeframe')?.value || '5m';
-    localStorage.setItem('dt_strategy_name', 'Liquidity Trap');
-    localStorage.setItem('dt_strategy_symbol', symbol);
-    localStorage.setItem('dt_strategy_timeframe', timeframe);
-    localStorage.setItem('dt_strategy_rr', '1:2');
-    if (localStorage.getItem('dt_strategy_active') === 'true') {
-      localStorage.setItem('dt_strategy_active', 'false');
+    sessionStorage.setItem('dt_strategy_name', 'Liquidity Trap');
+    sessionStorage.setItem('dt_strategy_symbol', symbol);
+    sessionStorage.setItem('dt_strategy_timeframe', timeframe);
+    sessionStorage.setItem('dt_strategy_rr', '1:2');
+    if (sessionStorage.getItem('dt_strategy_active') === 'true') {
+      sessionStorage.setItem('dt_strategy_active', 'false');
       setActiveState(false);
     }
     ltSetActiveState(true);
     ltRunBacktest();
   } else {
-    localStorage.removeItem('dt_strategy_name');
-    localStorage.removeItem('dt_strategy_symbol');
-    localStorage.removeItem('dt_strategy_timeframe');
-    localStorage.removeItem('dt_strategy_winrate');
-    localStorage.removeItem('bt_trades');
-    localStorage.removeItem('bt_summary');
+    sessionStorage.removeItem('dt_strategy_name');
+    sessionStorage.removeItem('dt_strategy_symbol');
+    sessionStorage.removeItem('dt_strategy_timeframe');
+    sessionStorage.removeItem('dt_strategy_winrate');
+    sessionStorage.removeItem('bt_trades');
+    sessionStorage.removeItem('bt_summary');
     ltSetActiveState(false);
   }
 }
 
 async function ltRunBacktest() {
-  const isStratActive = localStorage.getItem('lt_strategy_active') === 'true';
+  const isStratActive = sessionStorage.getItem('lt_strategy_active') === 'true';
   if (!isStratActive) {
     alert("Please click '? Activate Strategy' on Liquidity Trap first.");
     return;
@@ -574,15 +574,15 @@ async function ltRunBacktest() {
     statsEl.style.display = 'grid';
 
     const tradesWithSymbol = (d.trades || []).map(t => ({ ...t, symbol: d.symbol }));
-    localStorage.setItem('bt_trades', JSON.stringify(tradesWithSymbol));
-    localStorage.setItem('bt_summary', JSON.stringify({
+    sessionStorage.setItem('bt_trades', JSON.stringify(tradesWithSymbol));
+    sessionStorage.setItem('bt_summary', JSON.stringify({
       symbol: d.symbol, timeframe: d.timeframe, total_trades: d.total_trades,
       wins: d.wins, partials: d.partials || 0, losses: d.losses,
       win_rate: d.win_rate, total_pnl: d.total_pnl, strategy_name: 'Liquidity Trap'
     }));
-    localStorage.setItem('dt_strategy_winrate', d.win_rate + '%');
-    localStorage.setItem('dt_strategy_symbol', d.symbol);
-    localStorage.setItem('dt_strategy_timeframe', d.timeframe);
+    sessionStorage.setItem('dt_strategy_winrate', d.win_rate + '%');
+    sessionStorage.setItem('dt_strategy_symbol', d.symbol);
+    sessionStorage.setItem('dt_strategy_timeframe', d.timeframe);
 
     if (tradeSection) {
       tradeSection.style.display = 'block';

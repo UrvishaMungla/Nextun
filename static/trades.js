@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Load backtest trades if available
-    const btTradesJson = localStorage.getItem('bt_trades');
+    const btTradesJson = sessionStorage.getItem('bt_trades');
     if (btTradesJson) {
       try {
         const btTrades = JSON.parse(btTradesJson);
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const metrics = data.metrics || {};
 
       // If we have backtest summary, we can merge metrics or just show combined stats
-      const btSummaryJson = localStorage.getItem('bt_summary');
+      const btSummaryJson = sessionStorage.getItem('bt_summary');
       if (btSummaryJson && allTrades.length > (data.data ? data.data.length : 0)) {
         try {
           const btSummary = JSON.parse(btSummaryJson);
