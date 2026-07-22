@@ -1,5 +1,10 @@
 import MetaTrader5 as mt5
 import pandas as pd
+import threading
+
+
+# Reentrant lock to serialize all MT5 operations across threads/users
+mt5_lock = threading.RLock()
 
 
 TIMEFRAMES = {
@@ -23,135 +28,172 @@ TIMEFRAMES = {
 }
 
 
-def initialize():
+def initialize(user=None):
+    with mt5_lock:
+        terminal_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 
-    if mt5.initialize():
+        if user and user.isExnessConnected:
+            # Check if we are already logged into this account
+            acc_info = mt5.account_info()
+            if acc_info and acc_info.login == int(user.exnessAccountId):
+                return True  # Already logged into this account, do nothing!
+
+            # Force a clean restart before switching accounts.
+            mt5.shutdown()
+
+            # Pass credentials directly to initialize() so MT5 logs in silently
+            # in one step — no login dialog popup will appear.
+            authorized = mt5.initialize(
+                path=terminal_path,
+                login=int(user.exnessAccountId),
+                password=user.exnessPassword,
+                server=user.exnessServer,
+                timeout=60000,
+            )
+
+            if not authorized:
+                error = mt5.last_error()
+                print(f"[MT5] initialize+login FAILED for account {user.exnessAccountId} "
+                      f"on server {user.exnessServer}: {error}")
+            else:
+                print(f"[MT5] Connected to account {user.exnessAccountId} on {user.exnessServer}")
+            return authorized
+
+        # No user credentials — just make sure terminal is running
+        if mt5.terminal_info() is None:
+            if not mt5.initialize(path=terminal_path, timeout=60000):
+                error = mt5.last_error()
+                print(f"[MT5] initialize() FAILED (no user): {error}")
+                return False
+
         return True
-
-    return False
 
 
 def shutdown():
-    mt5.shutdown()
+    with mt5_lock:
+        mt5.shutdown()
 
 
-def close_mt5_position(symbol):
+def close_mt5_position(symbol, user=None):
     """
     Closes any open position for the given symbol on MT5.
     """
-    if not initialize():
-        return False, "MT5 init failed"
-    
-    positions = mt5.positions_get(symbol=symbol)
-    if not positions or len(positions) == 0:
-        return True, "No open position to close"
+    with mt5_lock:
+        if not initialize(user):
+            return False, "MT5 init failed"
         
-    pos = positions[0]
-    ticket = pos.ticket
-    volume = pos.volume
-    pos_type = pos.type
-    
-    tick = mt5.symbol_info_tick(symbol)
-    if not tick:
-        return False, f"No tick data for {symbol}"
+        positions = mt5.positions_get(symbol=symbol)
+        if not positions or len(positions) == 0:
+            return True, "No open position to close"
+            
+        pos = positions[0]
+        ticket = pos.ticket
+        volume = pos.volume
+        pos_type = pos.type
         
-    if pos_type == mt5.ORDER_TYPE_BUY:
-        close_type = mt5.ORDER_TYPE_SELL
-        price = tick.bid
-    else:
-        close_type = mt5.ORDER_TYPE_BUY
-        price = tick.ask
+        tick = mt5.symbol_info_tick(symbol)
+        if not tick:
+            return False, f"No tick data for {symbol}"
+            
+        if pos_type == mt5.ORDER_TYPE_BUY:
+            close_type = mt5.ORDER_TYPE_SELL
+            price = tick.bid
+        else:
+            close_type = mt5.ORDER_TYPE_BUY
+            price = tick.ask
+            
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": float(volume),
+            "type": close_type,
+            "position": ticket,
+            "price": price,
+            "deviation": 20,
+            "magic": 999111,
+            "comment": "Nextun Bot Close",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
         
-    request = {
-        "action": mt5.TRADE_ACTION_DEAL,
-        "symbol": symbol,
-        "volume": float(volume),
-        "type": close_type,
-        "position": ticket,
-        "price": price,
-        "deviation": 20,
-        "magic": 999111,
-        "comment": "Nextun Bot Close",
-        "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": mt5.ORDER_FILLING_IOC,
-    }
-    
-    result = mt5.order_send(request)
-    if result.retcode != mt5.TRADE_RETCODE_DONE:
-        return False, f"Failed to close position: {result.retcode} - {result.comment}"
-        
-    return True, f"Position {ticket} closed at {result.price}"
+        result = mt5.order_send(request)
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            return False, f"Failed to close position: {result.retcode} - {result.comment}"
+            
+        return True, f"Position {ticket} closed at {result.price}"
 
-def place_real_mt5_trade(symbol, action, volume, sl_points, tp_points):
+
+def place_real_mt5_trade(symbol, action, volume, sl_points, tp_points, user=None):
     """
     Places a REAL trade on the connected MT5/Exness terminal.
     sl_points and tp_points are the distance in points (e.g. 150 points).
     """
-    if not initialize():
-        return False, "MT5 init failed"
+    with mt5_lock:
+        if not initialize(user):
+            return False, "MT5 init failed", 0.0
 
-    symbol_info = mt5.symbol_info(symbol)
-    if symbol_info is None:
-        return False, f"{symbol} not found", 0.0
+        symbol_info = mt5.symbol_info(symbol)
+        if symbol_info is None:
+            return False, f"{symbol} not found", 0.0
 
-    if not symbol_info.visible:
-        if not mt5.symbol_select(symbol, True):
-            return False, f"Could not enable {symbol}", 0.0
+        if not symbol_info.visible:
+            if not mt5.symbol_select(symbol, True):
+                return False, f"Could not enable {symbol}", 0.0
 
-    point = symbol_info.point
-    tick = mt5.symbol_info_tick(symbol)
-    if tick is None:
-        return False, f"No tick data for {symbol}", 0.0
+        point = symbol_info.point
+        tick = mt5.symbol_info_tick(symbol)
+        if tick is None:
+            return False, f"No tick data for {symbol}", 0.0
 
-    if action == "BUY":
-        order_type = mt5.ORDER_TYPE_BUY
-        price = tick.ask
-        sl = price - (sl_points * point)
-        tp = price + (tp_points * point)
-    elif action == "SELL":
-        order_type = mt5.ORDER_TYPE_SELL
-        price = tick.bid
-        sl = price + (sl_points * point)
-        tp = price - (tp_points * point)
-    else:
-        return False, "Invalid action", 0.0
+        if action == "BUY":
+            order_type = mt5.ORDER_TYPE_BUY
+            price = tick.ask
+            sl = price - (sl_points * point)
+            tp = price + (tp_points * point)
+        elif action == "SELL":
+            order_type = mt5.ORDER_TYPE_SELL
+            price = tick.bid
+            sl = price + (sl_points * point)
+            tp = price - (tp_points * point)
+        else:
+            return False, "Invalid action", 0.0
 
-    request = {
-        "action": mt5.TRADE_ACTION_DEAL,
-        "symbol": symbol,
-        "volume": float(volume),
-        "type": order_type,
-        "price": price,
-        "sl": sl,
-        "tp": tp,
-        "deviation": 20,
-        "magic": 999111,
-        "comment": "Nextun Bot",
-        "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": mt5.ORDER_FILLING_IOC,
-    }
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": float(volume),
+            "type": order_type,
+            "price": price,
+            "sl": sl,
+            "tp": tp,
+            "deviation": 20,
+            "magic": 999111,
+            "comment": "Nextun Bot",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
 
-    result = mt5.order_send(request)
-    if result.retcode != mt5.TRADE_RETCODE_DONE:
-        return False, f"Trade error: {result.retcode} - {result.comment}", 0.0
+        result = mt5.order_send(request)
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            return False, f"Trade error: {result.retcode} - {result.comment}", 0.0
 
-    return True, f"Placed at {result.price}", result.price
+        return True, f"Placed at {result.price}", result.price
 
 
 def get_rates(symbol, timeframe, bars=300):
+    with mt5_lock:
+        tf = TIMEFRAMES.get(timeframe, mt5.TIMEFRAME_M15)
 
-    tf = TIMEFRAMES.get(timeframe, mt5.TIMEFRAME_M15)
+        rates = mt5.copy_rates_from_pos(symbol, tf, 0, bars)
 
-    rates = mt5.copy_rates_from_pos(symbol, tf, 0, bars)
+        if rates is None:
+            return None
 
-    if rates is None:
-        return None
+        df = pd.DataFrame(rates)
 
-    df = pd.DataFrame(rates)
+        df["time"] = pd.to_datetime(df["time"], unit="s")
 
-    df["time"] = pd.to_datetime(df["time"], unit="s")
-
-    return df
+        return df
 
 
 def find_swings(df, left=3, right=3):
@@ -199,8 +241,8 @@ def detect_double_top(df, highs, symbol):
     if h2-h1 < 5 or h2-h1 > 60:
         return None
 
-    p1 = df.close.iloc[h1]
-    p2 = df.close.iloc[h2]
+    p1 = df.high.iloc[h1]
+    p2 = df.high.iloc[h2]
 
     if abs(p1-p2)/p1 > 0.001:
         return None
@@ -228,8 +270,8 @@ def detect_double_bottom(df, lows, symbol):
     if l2-l1 < 5 or l2-l1 > 65:
         return None
 
-    p1 = df.close.iloc[l1]
-    p2 = df.close.iloc[l2]
+    p1 = df.low.iloc[l1]
+    p2 = df.low.iloc[l2]
 
     if abs(p1-p2)/p1 > 0.001:
         return None
@@ -265,15 +307,14 @@ def get_open_position(symbol):
     return None
 
 
-def get_signal(symbol, timeframe):
+def get_signal(symbol, timeframe, user=None):
 
-    if not initialize():
+    if not initialize(user):
         return {"action": "NONE"}
 
     df = get_rates(symbol, timeframe)
 
     if df is None:
-        shutdown()
         return {"action": "NONE"}
 
     highs, lows = find_swings(df)
@@ -290,7 +331,6 @@ def get_signal(symbol, timeframe):
 
         # We have an open BUY → close it first
         if current_pos == "BUY":
-            shutdown()
             return {
                 "action": "CLOSE_BUY",
                 "symbol": symbol
@@ -298,11 +338,9 @@ def get_signal(symbol, timeframe):
 
         # We already have a SELL open → do nothing
         if current_pos == "SELL":
-            shutdown()
             return {"action": "NONE"}
 
         # No position → place the SELL
-        shutdown()
         return sell_signal
 
     # ---- BUY pattern detected ----
@@ -310,7 +348,6 @@ def get_signal(symbol, timeframe):
 
         # We have an open SELL → close it first
         if current_pos == "SELL":
-            shutdown()
             return {
                 "action": "CLOSE_SELL",
                 "symbol": symbol
@@ -318,16 +355,12 @@ def get_signal(symbol, timeframe):
 
         # We already have a BUY open → do nothing
         if current_pos == "BUY":
-            shutdown()
             return {"action": "NONE"}
 
         # No position → place the BUY
-        shutdown()
         return buy_signal
 
     # No signal generated
-    shutdown()
-    
     print(f"[{symbol}] Scanned {len(highs)} highs & {len(lows)} lows. No valid Double Top/Bottom found yet.")
 
     return {

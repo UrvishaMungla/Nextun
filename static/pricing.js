@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
       // Clear token
-      localStorage.removeItem('nextunToken');
+      sessionStorage.removeItem('nextunToken');
       // Redirect back to login screen
       window.location.href = '/';
     });

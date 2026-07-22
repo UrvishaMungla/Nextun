@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      localStorage.removeItem('nextunToken');
+      sessionStorage.removeItem('nextunToken');
       window.location.href = '/';
     });
   }
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Sync active state with backend
     try {
-      const token = localStorage.getItem('nextunToken');
+      const token = sessionStorage.getItem('nextunToken');
       if (token) {
         const res = await fetch('/api/bot/status', {
           headers: { 'Authorization': `Bearer ${token}` }
