@@ -258,11 +258,11 @@ from collections import deque
 _bot_threads = {}   # user_id -> threading.Event (stop flag)
 _bot_logs = {}      # user_id -> deque of log strings (max 50)
 
-# Map Yahoo-style symbols to MT5 symbols (Exness Standard uses 'm' suffix)
+# Map Yahoo-style symbols to MT5 symbols (Exness without suffix)
 SYMBOL_MAP = {
-    'EURUSD=X': 'EURUSDm', 'GBPUSD=X': 'GBPUSDm', 'USDJPY=X': 'USDJPYm',
-    'AUDUSD=X': 'AUDUSDm', 'BTC-USD': 'BTCUSDm', 'ETH-USD': 'ETHUSDm',
-    'GC=F': 'XAUUSDm', 'SI=F': 'XAGUSDm',
+    'EURUSD=X': 'EURUSD', 'GBPUSD=X': 'GBPUSD', 'USDJPY=X': 'USDJPY',
+    'AUDUSD=X': 'AUDUSD', 'BTC-USD': 'BTCUSD', 'ETH-USD': 'ETHUSD',
+    'GC=F': 'XAUUSD', 'SI=F': 'XAGUSD',
 }
 # Map Yahoo-style timeframes to MT5 timeframe keys
 TF_MAP = {

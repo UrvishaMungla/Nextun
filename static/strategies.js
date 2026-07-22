@@ -231,6 +231,15 @@ async function executeLiveStrategy() {
       // Use exact match — "Strategy activated" vs "Strategy stopped"
       if (data.message === 'Strategy activated') {
         // Started
+        // Stop LT if it was running
+        localStorage.removeItem('lt_strategy_active');
+        ltSetActiveState(false);
+        const ltExecBtn = document.getElementById('lt-execute-btn');
+        const ltPanel = document.getElementById('lt-bot-panel');
+        if (ltExecBtn) { ltExecBtn.textContent = 'Run Live Strategy'; ltExecBtn.classList.remove('active-state'); }
+        if (ltPanel) { ltPanel.style.display = 'none'; }
+        if (typeof ltBotStatusInterval !== 'undefined' && ltBotStatusInterval) { clearInterval(ltBotStatusInterval); ltBotStatusInterval = null; }
+
         execBtn.textContent = 'Stop Live Strategy';
         execBtn.classList.add('active-state');
         panel.style.display = 'block';
@@ -533,51 +542,150 @@ function addLog(msg) {
 
 function ltSetActiveState(isActive) {
   const badge = document.getElementById('lt-status-badge');
-  const btn = document.getElementById('lt-activate-btn');
+  const btn = document.getElementById('lt-execute-btn');
   if (badge) {
     badge.textContent = isActive ? '✓ Active' : 'Available';
     badge.className = 'strategy-badge ' + (isActive ? 'badge-active' : 'badge-available');
   }
   if (btn) {
-    btn.textContent = isActive ? '⏹ Deactivate Strategy' : '⚡ Activate Strategy';
+    btn.textContent = isActive ? 'Stop Live Strategy' : 'Run Live Strategy';
     btn.className = 'btn-activate ' + (isActive ? 'active-state' : '');
   }
 }
 
-function ltToggleActivate() {
-  const current = localStorage.getItem('lt_strategy_active') === 'true';
-  const next = !current;
-  localStorage.setItem('lt_strategy_active', next ? 'true' : 'false');
+let ltBotStatusInterval = null;
 
-  if (next) {
-    // ── EXCLUSIVE: Kill Double Top UI completely ──
-    localStorage.removeItem('dt_strategy_active');
-    setActiveState(false);
-    const dtExecBtn = document.getElementById('dt-execute-btn');
-    const dtPanel   = document.getElementById('bot-panel');
-    if (dtExecBtn) { dtExecBtn.textContent = 'Run Live Strategy'; dtExecBtn.classList.remove('active-state'); }
-    if (dtPanel)   { dtPanel.style.display = 'none'; }
-    if (botStatusInterval) { clearInterval(botStatusInterval); botStatusInterval = null; }
+function ltAddLog(msg) {
+  const log = document.getElementById('lt-bot-log');
+  if (!log) return;
+  const line = document.createElement('div');
+  line.textContent = msg;
+  if (msg.includes('LONG') || msg.includes('BUY')) line.style.color = '#4ade80';
+  else if (msg.includes('SHORT') || msg.includes('SELL')) line.style.color = '#f87171';
+  else if (msg.includes('SYSTEM')) line.style.color = '#60a5fa';
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
 
-    // Set LT as active
-    ltSetActiveState(true);
-    ltRunBacktest();
-  } else {
-    localStorage.removeItem('dt_strategy_name');
-    localStorage.removeItem('dt_strategy_symbol');
-    localStorage.removeItem('dt_strategy_timeframe');
-    localStorage.removeItem('dt_strategy_winrate');
-    localStorage.removeItem('bt_trades');
-    localStorage.removeItem('bt_summary');
-    ltSetActiveState(false);
-    // Also hide LT bot panel if open
-    const ltPanel = document.getElementById('lt-bot-panel');
-    const ltLabel = document.getElementById('lt-bot-label-text');
-    const ltToggle = document.getElementById('lt-bot-toggle');
-    if (ltPanel)  ltPanel.style.display = 'none';
-    if (ltLabel)  { ltLabel.textContent = 'Bot: OFF'; ltLabel.style.color = ''; }
-    if (ltToggle) ltToggle.checked = false;
-    if (ltBotInterval) { clearInterval(ltBotInterval); ltBotInterval = null; }
+function startLtBotStatusPolling(token, logEl) {
+  if (ltBotStatusInterval) clearInterval(ltBotStatusInterval);
+  let lastLogCount = 0;
+
+  ltBotStatusInterval = setInterval(async () => {
+    try {
+      const res = await fetch('/api/bot/status', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (data.success && data.logs && data.logs.length > lastLogCount) {
+        const newLogs = data.logs.slice(lastLogCount);
+        newLogs.forEach(msg => ltAddLog(msg));
+        lastLogCount = data.logs.length;
+      }
+
+      if (data.success && data.activeStrategy === null) {
+        const execBtn = document.getElementById('lt-execute-btn');
+        if (execBtn && execBtn.classList.contains('active-state')) {
+            execBtn.textContent = 'Run Live Strategy';
+            execBtn.classList.remove('active-state');
+            ltAddLog('[SYSTEM] Bot stopped from another session or error.');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, 5000);
+}
+
+async function ltExecuteLiveStrategy() {
+  const token = localStorage.getItem('nextunToken');
+  if (!token) {
+    alert("Please log in first to run the live strategy.");
+    return;
+  }
+  
+  const symbol = document.getElementById('lt-symbol').value;
+  const timeframe = document.getElementById('lt-timeframe').value;
+  const execBtn = document.getElementById('lt-execute-btn');
+  const panel = document.getElementById('lt-bot-panel');
+  const log = document.getElementById('lt-bot-log');
+  
+  const originalText = execBtn.textContent;
+  execBtn.disabled = true;
+  execBtn.textContent = 'Wait...';
+
+  try {
+    const stratRes = await fetch('/api/strategies', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const stratData = await stratRes.json();
+    let strategyId = 2; // Default LT ID
+    if (stratData.success && stratData.data && stratData.data.strategies) {
+      const strat = stratData.data.strategies.find(s => s.name.includes("Liquidity"));
+      if (strat) strategyId = strat.id;
+    }
+
+    const res = await fetch('/api/strategies/toggle', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      },
+      body: JSON.stringify({ strategyId, symbol, timeframe })
+    });
+
+    const data = await res.json();
+    
+    if (data.success) {
+      if (data.message === 'Strategy activated') {
+        // Stop DT if it was running
+        localStorage.removeItem('dt_strategy_active');
+        setActiveState(false);
+        const dtExecBtn = document.getElementById('dt-execute-btn');
+        const dtPanel = document.getElementById('bot-panel');
+        if (dtExecBtn) { dtExecBtn.textContent = 'Run Live Strategy'; dtExecBtn.classList.remove('active-state'); }
+        if (dtPanel) { dtPanel.style.display = 'none'; }
+        if (botStatusInterval) { clearInterval(botStatusInterval); botStatusInterval = null; }
+
+        ltSetActiveState(true);
+        panel.style.display = 'block';
+        log.innerHTML = '';
+        ltAddLog('[SYSTEM] Liquidity Trap Bot activated! Live logs will appear below...');
+        
+        localStorage.setItem('lt_strategy_active', 'true');
+        localStorage.setItem('lt_strategy_name', 'Liquidity Trap & Inducement');
+        localStorage.setItem('lt_strategy_symbol', symbol);
+        localStorage.setItem('lt_strategy_timeframe', timeframe);
+        localStorage.setItem('lt_strategy_rr', '1:2');
+
+        startLtBotStatusPolling(token, log);
+      } else {
+        ltSetActiveState(false);
+        ltAddLog('[SYSTEM] Bot stopped.');
+        
+        if (ltBotStatusInterval) {
+          clearInterval(ltBotStatusInterval);
+          ltBotStatusInterval = null;
+        }
+
+        setTimeout(() => { panel.style.display = 'none'; }, 2000);
+        
+        localStorage.setItem('lt_strategy_active', 'false');
+        localStorage.removeItem('lt_strategy_name');
+        localStorage.removeItem('lt_strategy_symbol');
+        localStorage.removeItem('lt_strategy_timeframe');
+      }
+    } else {
+      alert("Error: " + (data.message || 'Unknown error'));
+      execBtn.textContent = originalText;
+    }
+  } catch (err) {
+    console.error('Toggle failed:', err);
+    alert('Network error while toggling strategy.');
+    execBtn.textContent = originalText;
+  } finally {
+    execBtn.disabled = false;
   }
 }
 

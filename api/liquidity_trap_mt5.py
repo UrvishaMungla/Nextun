@@ -18,7 +18,7 @@ def get_signal(symbol, timeframe):
 
     # Fetch Execution TF
     exec_df = get_rates(symbol, timeframe, bars=100)
-    if exec_df is None or len(exec_df) < 3:
+    if exec_df is None or len(exec_df) < 8:
         shutdown()
         return {"action": "NONE"}
 
@@ -45,26 +45,30 @@ def get_signal(symbol, timeframe):
         return {"action": "NONE"}
         
     reclaim = exec_df.iloc[-2] # Last closed candle
-    sweep = exec_df.iloc[-3]   # Candle before that
     
     buy_signal = None
     sell_signal = None
     
     # Check BUY SETUP (LONG CONDITIONS)
-    if sweep['low'] < current_major_low and reclaim['close'] > current_major_low:
-        if reclaim['close'] > reclaim['open']: # Bullish reclaim
-            lowest_low = min(sweep['low'], reclaim['low'])
+    # The reclaim candle must be bullish and close above the major low
+    if reclaim['close'] > reclaim['open'] and reclaim['close'] > current_major_low:
+        # Look back at the 5 candles preceding the reclaim candle to find a sweep
+        recent_lows = exec_df.iloc[-7:-2]['low']
+        lowest_recent = recent_lows.min()
+        
+        if lowest_recent < current_major_low: # A sweep occurred recently!
+            lowest_low = min(lowest_recent, reclaim['low'])
             symbol_info = mt5.symbol_info(symbol)
             if symbol_info:
                 point = symbol_info.point
                 if point > 0:
                     sl_dist = (reclaim['close'] - lowest_low)
-                    sl_points = int(sl_dist / point) + 20 # SL 1-2 ticks below the lowest point
+                    sl_points = int(sl_dist / point) + 20 # SL slightly below the sweep
                     
                     tp_dist = (current_major_high - reclaim['close'])
                     tp_points = int(tp_dist / point)
                     
-                    if sl_points > 0 and tp_points > 0:
+                    if sl_points > 10 and tp_points > 10:
                         buy_signal = {
                             "action": "BUY",
                             "symbol": symbol,
@@ -74,20 +78,25 @@ def get_signal(symbol, timeframe):
                         }
                     
     # Check SELL SETUP (SHORT CONDITIONS)
-    if sweep['high'] > current_major_high and reclaim['close'] < current_major_high:
-        if reclaim['close'] < reclaim['open']: # Bearish rejection
-            highest_high = max(sweep['high'], reclaim['high'])
+    # The reclaim candle must be bearish and close below the major high
+    if reclaim['close'] < reclaim['open'] and reclaim['close'] < current_major_high:
+        # Look back at the 5 candles preceding the reclaim candle to find a sweep
+        recent_highs = exec_df.iloc[-7:-2]['high']
+        highest_recent = recent_highs.max()
+        
+        if highest_recent > current_major_high: # A sweep occurred recently!
+            highest_high = max(highest_recent, reclaim['high'])
             symbol_info = mt5.symbol_info(symbol)
             if symbol_info:
                 point = symbol_info.point
                 if point > 0:
                     sl_dist = (highest_high - reclaim['close'])
-                    sl_points = int(sl_dist / point) + 20 # SL 1-2 ticks above the highest point
+                    sl_points = int(sl_dist / point) + 20 # SL slightly above the sweep
                     
                     tp_dist = (reclaim['close'] - current_major_low)
                     tp_points = int(tp_dist / point)
                     
-                    if sl_points > 0 and tp_points > 0:
+                    if sl_points > 10 and tp_points > 10:
                         sell_signal = {
                             "action": "SELL",
                             "symbol": symbol,
@@ -122,6 +131,4 @@ def get_signal(symbol, timeframe):
         return buy_signal
 
     shutdown()
-    # print(f"[{symbol}] Liquidity Trap scanning. Major High: {current_major_high}, Major Low: {current_major_low}")
-
     return {"action": "NONE"}
