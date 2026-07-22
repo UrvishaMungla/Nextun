@@ -73,11 +73,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = await res.json();
         if (data.success) {
           if (data.running) {
-            localStorage.setItem('dt_strategy_active', 'true');
-            if (data.symbol) localStorage.setItem('dt_strategy_symbol', data.symbol);
-            if (data.timeframe) localStorage.setItem('dt_strategy_timeframe', data.timeframe);
+            sessionStorage.setItem('dt_strategy_active', 'true');
+            if (data.symbol) sessionStorage.setItem('dt_strategy_symbol', data.symbol);
+            if (data.timeframe) sessionStorage.setItem('dt_strategy_timeframe', data.timeframe);
           } else {
-            localStorage.removeItem('dt_strategy_active');
+            sessionStorage.removeItem('dt_strategy_active');
           }
         }
       }
@@ -87,8 +87,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // FIX: Strategy is ONLY shown as Active when BOTH:
     //   (a) dt_strategy_active === 'true'  (user clicked Activate)
     //   (b) bt_trades has actual trade data (backtest was run, not just activated)
-    var isStratActive = localStorage.getItem('dt_strategy_active') === 'true';
-    var btTradesRaw   = localStorage.getItem('bt_trades');
+    var isStratActive = sessionStorage.getItem('dt_strategy_active') === 'true';
+    var btTradesRaw   = sessionStorage.getItem('bt_trades');
     var hasBacktestData = false;
     if (btTradesRaw) {
       try { hasBacktestData = JSON.parse(btTradesRaw).length > 0; } catch(e) {}
@@ -96,11 +96,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show as active if the strategy is enabled by the user
     var isReallyActive = isStratActive;
 
-    var stratName    = localStorage.getItem('dt_strategy_name')      || 'No Active Strategy';
-    var stratSymbol  = localStorage.getItem('dt_strategy_symbol')    || '';
-    var stratTf      = localStorage.getItem('dt_strategy_timeframe') || '';
-    var stratWinRate = localStorage.getItem('dt_strategy_winrate')   || '--';
-    var stratRR      = localStorage.getItem('dt_strategy_rr')        || '1:2';
+    var stratName    = sessionStorage.getItem('dt_strategy_name')      || 'No Active Strategy';
+    var stratSymbol  = sessionStorage.getItem('dt_strategy_symbol')    || '';
+    var stratTf      = sessionStorage.getItem('dt_strategy_timeframe') || '';
+    var stratWinRate = sessionStorage.getItem('dt_strategy_winrate')   || '--';
+    var stratRR      = sessionStorage.getItem('dt_strategy_rr')        || '1:2';
 
     var nameEl = document.getElementById('dash-strategy-name');
     var descEl = document.getElementById('dash-strategy-desc');
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // -- 2. P&L Cards --
-    var btSummaryRaw = localStorage.getItem('bt_summary');
+    var btSummaryRaw = sessionStorage.getItem('bt_summary');
     if (btSummaryRaw) {
       var summary  = JSON.parse(btSummaryRaw);
       var totalPnl = summary.total_pnl || 0;
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function fetchCalendarData() {
-    var raw = localStorage.getItem('bt_trades');
+    var raw = sessionStorage.getItem('bt_trades');
     if (!raw) { renderCalendar([], {}); return; }
     try {
       var trades = JSON.parse(raw);
@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function reloadCalendar() {
-    var raw = localStorage.getItem('bt_trades');
+    var raw = sessionStorage.getItem('bt_trades');
     if (!raw) { renderCalendar([], {}); return; }
     try {
       var allTrades = JSON.parse(raw);
