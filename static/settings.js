@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Backend Settings Integration ---
-  const token = localStorage.getItem('nextunToken');
+  const token = sessionStorage.getItem('nextunToken');
   if (!token) {
       // window.location.href = '/'; // Redirect if not logged in
     return;

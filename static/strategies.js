@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Logout
   document.getElementById('logout-btn')?.addEventListener('click', (e) => {
     e.preventDefault();
-    localStorage.removeItem('nextunToken');
+    sessionStorage.removeItem('nextunToken');
     localStorage.removeItem('dt_strategy_active');
     window.location.href = '/';
   });
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Sync activation state with backend
   (async function syncState() {
     try {
-      const token = localStorage.getItem('nextunToken');
+      const token = sessionStorage.getItem('nextunToken');
       if (!token) return;
       const res = await fetch('/api/bot/status', {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -146,7 +146,7 @@ function toggleActivate() {
 let botStatusInterval = null;
 
 async function executeLiveStrategy() {
-  const token = localStorage.getItem('nextunToken');
+  const token = sessionStorage.getItem('nextunToken');
   if (!token) {
     alert("Please log in first to run the live strategy.");
     return;
@@ -383,7 +383,7 @@ async function toggleBot(checkbox) {
   const label = document.getElementById('bot-label-text');
   const log = document.getElementById('bot-log');
   
-  const token = localStorage.getItem('nextunToken');
+  const token = sessionStorage.getItem('nextunToken');
   if (!token) {
     alert("Please log in first to run the live strategy.");
     checkbox.checked = false;
