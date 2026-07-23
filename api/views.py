@@ -258,11 +258,11 @@ from collections import deque
 _bot_threads = {}   # user_id -> threading.Event (stop flag)
 _bot_logs = {}      # user_id -> deque of log strings (max 50)
 
-# Map Yahoo-style symbols to MT5 symbols (Exness Standard uses 'm' suffix)
+# Map Yahoo-style symbols to MT5 symbols (Exness without suffix)
 SYMBOL_MAP = {
-    'EURUSD=X': 'EURUSDm', 'GBPUSD=X': 'GBPUSDm', 'USDJPY=X': 'USDJPYm',
-    'AUDUSD=X': 'AUDUSDm', 'BTC-USD': 'BTCUSDm', 'ETH-USD': 'ETHUSDm',
-    'GC=F': 'XAUUSDm', 'SI=F': 'XAGUSDm',
+    'EURUSD=X': 'EURUSD', 'GBPUSD=X': 'GBPUSD', 'USDJPY=X': 'USDJPY',
+    'AUDUSD=X': 'AUDUSD', 'BTC-USD': 'BTCUSD', 'ETH-USD': 'ETHUSD',
+    'GC=F': 'XAUUSD', 'SI=F': 'XAGUSD',
 }
 # Map Yahoo-style timeframes to MT5 timeframe keys
 TF_MAP = {
@@ -390,7 +390,14 @@ class ToggleStrategyView(APIView):
                         'riskReward': '1:2'
                     }
                 )
-                # Toggle: if already active, deactivate
+
+                # EXCLUSIVE MODE: Always stop any existing bot thread first (regardless of strategy)
+                old_event = _bot_threads.pop(user.id, None)
+                if old_event:
+                    old_event.set()
+                _bot_logs.pop(user.id, None)
+
+                # Toggle: if the SAME strategy is already active → deactivate
                 if user.activeStrategy and user.activeStrategy.id == strategy.id:
                     user.activeStrategy = None
                     user.active_symbol = None
@@ -402,7 +409,10 @@ class ToggleStrategyView(APIView):
                     if stop_event:
                         stop_event.set()
 
-                    # Close actual open trades on MT5 in the background
+                    # Close actual open trades on MT5
+                    from .models import Trade
+                    from .dbtp_dbbtm import close_mt5_position
+                    
                     open_trades = Trade.objects.filter(user=user, status='OPEN')
                     open_trade_ids = list(open_trades.values_list('id', flat=True))
 
@@ -427,21 +437,15 @@ class ToggleStrategyView(APIView):
                     t.start()
 
                     return Response({'success': True, 'message': 'Strategy stopped'})
+
+                # Different or no strategy active → activate the new one
                 else:
                     user.activeStrategy = strategy
                     user.active_symbol = symbol
                     user.active_timeframe = timeframe
                     user.save()
 
-                    # Stop any existing bot thread for this user first
-                    old_event = _bot_threads.pop(user.id, None)
-                    if old_event:
-                        old_event.set()
-
-                    # Clear old logs
-                    _bot_logs.pop(user.id, None)
-
-                    # Start a new background bot thread
+                    # Start a new background bot thread for the selected strategy
                     stop_event = threading.Event()
                     _bot_threads[user.id] = stop_event
                     t = threading.Thread(
@@ -457,18 +461,34 @@ class ToggleStrategyView(APIView):
         return Response({'success': False, 'message': 'strategyId required'}, status=400)
 
 
+
 class BotStatusView(APIView):
     permission_classes = [IsAuthenticated]
-
+ 
     def get(self, request):
         user = request.user
         is_running = user.id in _bot_threads and not _bot_threads[user.id].is_set()
+       
+        if user.activeStrategy and not is_running:
+            stop_event = threading.Event()
+            _bot_threads[user.id] = stop_event
+            t = threading.Thread(
+                target=_run_bot_loop,
+                args=(user.id, stop_event),
+                daemon=True
+            )
+            t.start()
+            is_running = True
+            
         logs = list(_bot_logs.get(user.id, []))
         return Response({
             'success': True,
             'running': is_running,
             'symbol': user.active_symbol,
             'timeframe': user.active_timeframe,
+            'strategy_name': user.activeStrategy.name if user.activeStrategy else None,
+            'success_rate': user.activeStrategy.successRate if user.activeStrategy else None,
+            'risk_reward': user.activeStrategy.riskReward if user.activeStrategy else None,
             'logs': logs
         })
 
@@ -838,11 +858,16 @@ class ExecuteStrategyView(APIView):
             return Response({'success': False, 'message': 'You must connect Exness first.'}, status=400)
 
         # 1. Evaluate Strategy
-        from .dbtp_dbbtm import get_signal
-        signal = get_signal(symbol, timeframe, user=user)
+        if user.activeStrategy and user.activeStrategy.name == 'Liquidity Trap & Inducement':
+            from .liquidity_trap_mt5 import get_signal
+        else:
+            from .dbtp_dbbtm import get_signal
+
+        signal = get_signal(symbol, timeframe,user=user)
         
         action = signal.get("action", "NONE")
         if action == "NONE":
+            strategy_name = user.activeStrategy.name if user.activeStrategy else "selected strategy"
             return Response({
                 'success': True, 
                 'message': f"No {strategy_name} pattern found on {symbol} ({timeframe}) right now.",
