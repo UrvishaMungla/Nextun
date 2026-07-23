@@ -121,23 +121,25 @@
         }
 
         .header-nav {
-            flex: 1;
+            flex: auto;
             display: flex;
             justify-content: center;
-            gap: 2.5rem;
+            gap: 2rem;
             align-items: center;
         }
 
         .header-nav a {
-            color:white;
-    font-size:14px;
-    font-weight:500;
-    font: medium;
-    font-family: serif;
+            color: white;
+            font-size: 15px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: color 0.3s ease;
         }
 
         .header-nav a:hover {
-            color: #01c26c;
+            color: #00d67f;
         }
 
         .header-buttons {

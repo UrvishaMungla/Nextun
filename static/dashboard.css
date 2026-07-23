@@ -1511,9 +1511,12 @@ body.dark-theme .settings-btn-solid {
   }
 
   .broker-panel,
-  .strategy-panel,
   .calendar-panel{
     height:auto;
+  }
+  .strategy-panel {
+    min-height: 349px;
+    height: auto;
   }
 
   .calendar-grid{

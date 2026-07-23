@@ -469,6 +469,7 @@ class BotStatusView(APIView):
             'running': is_running,
             'symbol': user.active_symbol,
             'timeframe': user.active_timeframe,
+            'strategyName': user.activeStrategy.name if getattr(user, 'activeStrategy', None) else 'Double Top / Double Bottom',
             'logs': logs
         })
 
