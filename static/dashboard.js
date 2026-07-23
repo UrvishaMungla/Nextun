@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
 
   // --- DateTime ---
   function updateDateTime() {
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // --- Logout ---
   var logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', function(e) {
+    logoutBtn.addEventListener('click', function (e) {
       e.preventDefault();
       sessionStorage.removeItem('nextunToken');
       window.location.href = '/';
@@ -28,19 +28,19 @@ document.addEventListener('DOMContentLoaded', function() {
   var themeBtns = document.querySelectorAll('.theme-btn');
   if (themeBtns.length >= 2) {
     var lightBtn = themeBtns[0];
-    var darkBtn  = themeBtns[1];
+    var darkBtn = themeBtns[1];
     if (localStorage.getItem('theme') === 'dark') {
       document.body.classList.add('dark-theme');
       darkBtn.classList.add('active');
       lightBtn.classList.remove('active');
     }
-    lightBtn.addEventListener('click', function() {
+    lightBtn.addEventListener('click', function () {
       document.body.classList.remove('dark-theme');
       lightBtn.classList.add('active');
       darkBtn.classList.remove('active');
       localStorage.setItem('theme', 'light');
     });
-    darkBtn.addEventListener('click', function() {
+    darkBtn.addEventListener('click', function () {
       document.body.classList.add('dark-theme');
       darkBtn.classList.add('active');
       lightBtn.classList.remove('active');
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // --- Dashboard Init ---
   async function initDashboard() {
     function fmt(val) { return (val >= 0 ? '+' : '') + parseFloat(val).toFixed(4); }
-    
+
     // Sync active state with backend
     try {
       const token = sessionStorage.getItem('nextunToken');
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var totalEl  = document.getElementById('metric-total-pnl');
       if (totalEl) {
         totalEl.textContent = fmt(totalPnl);
-        totalEl.className   = totalPnl >= 0 ? 'text-green' : 'text-red';
+        totalEl.className = totalPnl >= 0 ? 'text-green' : 'text-red';
       }
       var totalSubEl = document.getElementById('metric-total-pnl-sub');
       if (totalSubEl) totalSubEl.textContent = 'All time - ' + (window.liveMetrics.totalTrades || 0) + ' trades';
@@ -164,13 +164,13 @@ document.addEventListener('DOMContentLoaded', function() {
       var trades = window.liveTrades;
       var refDate = new Date();
 
-      var refYear  = refDate.getFullYear();
+      var refYear = refDate.getFullYear();
       var refMonth = refDate.getMonth();
-      var refDay   = refDate.getDate();
+      var refDay = refDate.getDate();
 
-      var refDateStr  = refYear + '-' + pad2(refMonth + 1) + '-' + pad2(refDay);
+      var refDateStr = refYear + '-' + pad2(refMonth + 1) + '-' + pad2(refDay);
       var refMonthStr = refYear + '-' + pad2(refMonth + 1);
-      var refYearStr  = String(refYear);
+      var refYearStr = String(refYear);
 
       var todayPnl = 0, monthPnl = 0, yearPnl = 0;
 
@@ -182,9 +182,9 @@ document.addEventListener('DOMContentLoaded', function() {
         var dStr = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
         var mStr = d.getFullYear() + '-' + pad2(d.getMonth() + 1);
         var yStr = String(d.getFullYear());
-        if (dStr === refDateStr)  todayPnl += pnl;
+        if (dStr === refDateStr) todayPnl += pnl;
         if (mStr === refMonthStr) monthPnl += pnl;
-        if (yStr === refYearStr)  yearPnl  += pnl;
+        if (yStr === refYearStr) yearPnl += pnl;
       });
 
       function updateCard(id, val) {
@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var yearSub  = document.getElementById('metric-yearly-pnl-sub');
       if (todaySub) todaySub.textContent = 'closed trades today (' + refDateStr + ')';
       if (monthSub) monthSub.textContent = 'current calendar month (' + refMonthStr + ')';
-      if (yearSub)  yearSub.textContent  = 'current calendar year (' + refYearStr + ')';
+      if (yearSub) yearSub.textContent = 'current calendar year (' + refYearStr + ')';
 
       updateCard('metric-todays-pnl', todayPnl);
       updateCard('metric-monthly-pnl', monthPnl);
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.calendarInitialized = true;
       }
 
-      var records = Object.keys(dateMap).map(function(d) { return { date: d, pnl: dateMap[d] }; });
+      var records = Object.keys(dateMap).map(function (d) { return { date: d, pnl: dateMap[d] }; });
       renderCalendar(records, dateMap);
       setupCalendarNav();
     } catch (err) {
@@ -252,13 +252,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.calNavSetup) return;
     var btns = document.querySelectorAll('.cal-nav');
     if (btns.length >= 2) {
-      btns[0].addEventListener('click', function() {
+      btns[0].addEventListener('click', function () {
         // Previous month: decrement integers, handle year rollback
         window.calMonth--;
         if (window.calMonth < 0) { window.calMonth = 11; window.calYear--; }
         reloadCalendar();
       });
-      btns[1].addEventListener('click', function() {
+      btns[1].addEventListener('click', function () {
         // Next month: increment integers, handle year rollover
         window.calMonth++;
         if (window.calMonth > 11) { window.calMonth = 0; window.calYear++; }
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var dateMap   = buildDateMap(trades);
       var records   = Object.keys(dateMap).map(function(d) { return { date: d, pnl: dateMap[d] }; });
       renderCalendar(records, dateMap);
-    } catch(e) {}
+    } catch (e) { }
   }
 
   function renderCalendar(records, dateMap) {
@@ -283,14 +283,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!grid) return;
 
     // FIX: Read calYear/calMonth as plain integers to avoid Date mutation overflow
-    var year  = (window.calYear  !== undefined) ? window.calYear  : new Date().getFullYear();
+    var year = (window.calYear !== undefined) ? window.calYear : new Date().getFullYear();
     var month = (window.calMonth !== undefined) ? window.calMonth : new Date().getMonth();
 
     var monthStr = year + '-' + pad2(month + 1);
 
     // Trading summary for the selected month only
     var netPnl = 0, profitDays = 0, lossDays = 0;
-    records.forEach(function(r) {
+    records.forEach(function (r) {
       if (r.date.startsWith(monthStr)) {
         netPnl += r.pnl;
         if (r.pnl >= 0) profitDays++; else lossDays++;
@@ -301,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var netEl = document.getElementById('summary-net-pnl');
     if (netEl) {
       netEl.textContent = fmt4(netPnl);
-      netEl.className   = netPnl >= 0 ? 'val text-green' : 'val text-red';
+      netEl.className = netPnl >= 0 ? 'val text-green' : 'val text-red';
     }
     var pdEl = document.getElementById('summary-profit-days');
     var ldEl = document.getElementById('summary-loss-days');
@@ -312,8 +312,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (wrEl) wrEl.textContent = (total > 0 ? Math.round(profitDays / total * 100) : 0) + '%';
 
     // Month/Year label
-    var monthNames = ['January','February','March','April','May','June',
-                      'July','August','September','October','November','December'];
+    var monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
     var hdr = document.getElementById('calendar-month-year');
     if (hdr) hdr.textContent = monthNames[month] + ' ' + year;
 
@@ -323,20 +323,20 @@ document.addEventListener('DOMContentLoaded', function() {
     firstDay = firstDay === 0 ? 6 : firstDay - 1;  // Sun(0)->6, Mon(1)->0, Tue(2)->1 ...
 
     var html = '<div class="cal-header">MON</div><div class="cal-header">TUE</div>' +
-               '<div class="cal-header">WED</div><div class="cal-header">THU</div>' +
-               '<div class="cal-header">FRI</div><div class="cal-header">SAT</div>' +
-               '<div class="cal-header">SUN</div>';
+      '<div class="cal-header">WED</div><div class="cal-header">THU</div>' +
+      '<div class="cal-header">FRI</div><div class="cal-header">SAT</div>' +
+      '<div class="cal-header">SUN</div>';
 
     for (var i = 0; i < firstDay; i++) {
       html += '<div class="cal-cell" style="background:transparent;border:none;"></div>';
     }
 
     for (var day = 1; day <= daysInMonth; day++) {
-      var ds  = year + '-' + pad2(month + 1) + '-' + pad2(day);
+      var ds = year + '-' + pad2(month + 1) + '-' + pad2(day);
       var pnl = (dateMap && dateMap[ds] !== undefined) ? dateMap[ds] : undefined;
       if (pnl !== undefined) {
         var bgClass = pnl >= 0 ? 'bg-green' : 'bg-red';
-        var sign    = pnl >= 0 ? '+' : '';
+        var sign = pnl >= 0 ? '+' : '';
         html += '<div class="cal-cell ' + bgClass + '"><span class="day">' + day + '</span><span class="pl">' + sign + pnl.toFixed(4) + '</span></div>';
       } else {
         html += '<div class="cal-cell" style="background:transparent;"><span class="day" style="color:var(--text-gray);">' + day + '</span></div>';
@@ -349,12 +349,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // ─── Boot ──────────────────────────────────────────────────────────────────
   initDashboard();
 
-const menuToggle = document.getElementById("menuToggle");
-const sidebar = document.querySelector(".sidebar");
+  const menuToggle = document.getElementById("menuToggle");
+  const sidebar = document.querySelector(".sidebar");
 
-menuToggle.addEventListener("click", () => {
+  menuToggle.addEventListener("click", () => {
     sidebar.classList.toggle("show");
-});
+  });
 
 });
 

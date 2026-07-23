@@ -151,14 +151,14 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# ─── Email (Production: sends real emails) ───────────────────────────────
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# ─── Email (Development: prints to console) ───────────────────────────────
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
 EMAIL_HOST_USER = "munglaurvisa@gmail.com"
-# Put your 16-character App Password here:
+# Put your 16-character App Password here if switching back to smtp.EmailBackend
 EMAIL_HOST_PASSWORD = "YOUR_APP_PASSWORD_HERE"
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
