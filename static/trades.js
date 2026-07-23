@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ─── Logout ───────────────────────────────────────────────
   document.getElementById('logout-btn')?.addEventListener('click', (e) => {
     e.preventDefault();
-    localStorage.removeItem('nextunToken');
+    sessionStorage.removeItem('nextunToken');
     window.location.href = '/';
   });
 
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  const token = localStorage.getItem('nextunToken');
+  const token = sessionStorage.getItem('nextunToken');
   if (!token) {
     window.location.href = '/login';
     return;
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Load backtest trades if available
-    const btTradesJson = localStorage.getItem('bt_trades');
+    const btTradesJson = sessionStorage.getItem('bt_trades');
     if (btTradesJson) {
       try {
         const btTrades = JSON.parse(btTradesJson);
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const metrics = data.metrics || {};
 
       // If we have backtest summary, we can merge metrics or just show combined stats
-      const btSummaryJson = localStorage.getItem('bt_summary');
+      const btSummaryJson = sessionStorage.getItem('bt_summary');
       if (btSummaryJson && allTrades.length > (data.data ? data.data.length : 0)) {
         try {
           const btSummary = JSON.parse(btSummaryJson);
@@ -180,15 +180,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       const formattedEntry = t.entryPrice ? t.entryPrice.toFixed(5) : '0.00000';
       const formattedExit = t.currentPrice ? t.currentPrice.toFixed(5) : '-';
       
-      let statusColor = '#fee2e2';
-      let statusText = '#dc2626';
-      let statusLabel = 'OPEN';
+      let statusColor = '#f3f4f6';
+      let statusText = '#4b5563';
+      let statusLabel = 'CLOSED'; // Default fallback for closed/break-even
       if (t.status === 'OPEN') {
          statusColor = '#dbeafe'; statusText = '#2563eb'; statusLabel = 'OPEN';
-      } else if (t.status === 'WIN' || t.pnl > 0) {
+      } else if (t.status === 'WIN' || (t.status === 'CLOSED' && t.pnl > 0)) {
          statusColor = '#dcfce7'; statusText = '#16a34a'; statusLabel = 'WIN';
-      } else if (t.status === 'LOSS' || t.pnl < 0) {
+      } else if (t.status === 'LOSS' || (t.status === 'CLOSED' && t.pnl < 0)) {
          statusColor = '#fee2e2'; statusText = '#dc2626'; statusLabel = 'LOSS';
+      } else if (t.status === 'CLOSED' && t.pnl === 0) {
+         statusColor = '#f3f4f6'; statusText = '#4b5563'; statusLabel = 'CLOSED';
       }
 
       return `

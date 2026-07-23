@@ -12,9 +12,13 @@ def get_higher_timeframe(tf_string):
         return "H1"
     return "H4"
 
-def get_signal(symbol, timeframe):
-    if not initialize():
-        return {"action": "NONE"}
+def get_signal(symbol, timeframe, user=None):
+    if user:
+        if not initialize(user=user):
+            return {"action": "NONE"}
+    else:
+        if not initialize():
+            return {"action": "NONE"}
 
     # Fetch Execution TF
     exec_df = get_rates(symbol, timeframe, bars=100)

@@ -373,7 +373,7 @@ verifySignupOtpBtn?.addEventListener("click", async () => {
         const data = await res.json();
 
         if (data.success) {
-            localStorage.setItem("nextunToken", data.token);
+            sessionStorage.setItem("nextunToken", data.token);
             signupOtpModal.classList.add("gone");
             // Automatically log in and show broker view
             showBrokerView();
@@ -663,7 +663,7 @@ verifyOtpLoader.classList.remove("gone");
 
         if(data.success){
 
-            localStorage.setItem(
+            sessionStorage.setItem(
                 "nextunToken",
                 loginToken
             );
@@ -808,7 +808,7 @@ connectForm.addEventListener('submit', async (e) => {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('nextunToken')}`
+        'Authorization': `Bearer ${sessionStorage.getItem('nextunToken')}`
       },
       body: JSON.stringify({ clientId, pin })
     });
@@ -889,7 +889,7 @@ document.getElementById('verify-angelone-otp-btn')?.addEventListener('click', as
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('nextunToken')}`
+        'Authorization': `Bearer ${sessionStorage.getItem('nextunToken')}`
       },
       body: JSON.stringify({ otp })
     });
@@ -963,7 +963,7 @@ document.getElementById('close-angelone-otp')?.addEventListener('click', () => {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('nextunToken')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('nextunToken')}`
           },
           body: JSON.stringify({ accountId, password, server })
         });

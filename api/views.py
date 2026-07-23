@@ -282,7 +282,7 @@ def _bot_log(user_id, msg):
 def _run_bot_loop(user_id, stop_event):
     """Background thread that scans for patterns every 30 seconds."""
     import time as _time
-    from .dbtp_dbbtm import get_signal
+    from .dbtp_dbbtm import get_signal, mt5_lock, initialize, place_real_mt5_trade, close_mt5_position
     from .models import CustomUser, Trade
 
     _bot_log(user_id, "Bot engine started!")
@@ -303,50 +303,59 @@ def _run_bot_loop(user_id, stop_event):
             now_str = datetime.now().strftime("%H:%M:%S")
             _bot_log(user_id, f"[{now_str}] Scanning {mt5_symbol} ({mt5_tf}) — fetching 300 candles from MT5...")
 
-            if user.activeStrategy.name == 'Liquidity Trap & Inducement':
-                from .liquidity_trap_mt5 import get_signal
-            else:
-                from .dbtp_dbbtm import get_signal
-
-            signal = get_signal(mt5_symbol, mt5_tf)
-            action = signal.get("action", "NONE")
-
-            if action in ["BUY", "SELL"]:
-                _bot_log(user_id, f"[{now_str}] PATTERN FOUND! {action} on {mt5_symbol}")
-                volume = signal.get("volume", 0.01)
-                sl = signal.get("sl", 150)
-                tp = signal.get("tp", 300)
-
-                # Execute REAL trade on MT5
-                from .dbtp_dbbtm import place_real_mt5_trade
-                success, msg, entry_price = place_real_mt5_trade(mt5_symbol, action, volume, sl, tp)
-
-                if success:
-                    Trade.objects.create(
-                        user=user, symbol=mt5_symbol, type=action,
-                        quantity=volume, entryPrice=entry_price, currentPrice=entry_price,
-                        pnl=0.0, status='OPEN'
-                    )
-                    _bot_log(user_id, f"[{now_str}] Trade placed on MT5! {action} {mt5_symbol} vol={volume} SL={sl} TP={tp}")
-                    _bot_log(user_id, f"[{now_str}] MT5 Response: {msg}")
+            # Hold the MT5 lock for the ENTIRE scan+trade cycle.
+            # This prevents another user's bot thread from switching the MT5
+            # account in between our signal check and trade placement.
+            with mt5_lock:
+                if not initialize(user):
+                    _bot_log(user_id, f"[{now_str}] Failed to connect to MT5. Will retry in 30s...")
+                    # Skip to sleep
                 else:
-                    _bot_log(user_id, f"[{now_str}] Trade failed: {msg}")
+                    if user.activeStrategy.name == 'Liquidity Trap & Inducement':
+                        from .liquidity_trap_mt5 import get_signal as liq_get_signal
+                        signal = liq_get_signal(mt5_symbol, mt5_tf, user=user)
+                    else:
+                        signal = get_signal(mt5_symbol, mt5_tf, user=user)
+                    action = signal.get("action", "NONE")
 
-            elif action in ["CLOSE_BUY", "CLOSE_SELL"]:
-                _bot_log(user_id, f"[{now_str}] Signal to {action} on {mt5_symbol} (opposing position)")
-                from .dbtp_dbbtm import close_mt5_position
-                success, msg = close_mt5_position(mt5_symbol)
-                if success:
-                    _bot_log(user_id, f"[{now_str}] Successfully closed position on MT5! {msg}")
-                    # Update trade status in DB
-                    open_trades = Trade.objects.filter(user=user, symbol=mt5_symbol, status='OPEN')
-                    for t in open_trades:
-                        t.status = 'CLOSED'
-                        t.save()
-                else:
-                    _bot_log(user_id, f"[{now_str}] Failed to close position: {msg}")
-            else:
-                _bot_log(user_id, f"[{now_str}] No pattern on {mt5_symbol} ({mt5_tf}). Next scan in 30s...")
+                    if action in ["BUY", "SELL"]:
+                        _bot_log(user_id, f"[{now_str}] PATTERN FOUND! {action} on {mt5_symbol}")
+                        volume = signal.get("volume", 0.01)
+                        sl = signal.get("sl", 150)
+                        tp = signal.get("tp", 300)
+
+                        # Execute REAL trade on MT5 (still inside the lock — same account)
+                        success, msg, entry_price = place_real_mt5_trade(mt5_symbol, action, volume, sl, tp, user=user)
+
+                        if success:
+                            Trade.objects.create(
+                                user=user, symbol=mt5_symbol, type=action,
+                                quantity=volume, entryPrice=entry_price, currentPrice=entry_price,
+                                pnl=0.0, status='OPEN'
+                            )
+                            _bot_log(user_id, f"[{now_str}] Trade placed on MT5! {action} {mt5_symbol} vol={volume} SL={sl} TP={tp}")
+                            _bot_log(user_id, f"[{now_str}] MT5 Response: {msg}")
+                        else:
+                            _bot_log(user_id, f"[{now_str}] Trade failed: {msg}")
+
+                    elif action in ["CLOSE_BUY", "CLOSE_SELL"]:
+                        _bot_log(user_id, f"[{now_str}] Signal to {action} on {mt5_symbol} (opposing position)")
+                        success, msg = close_mt5_position(mt5_symbol, user=user)
+                        if success:
+                            _bot_log(user_id, f"[{now_str}] Successfully closed position on MT5! {msg}")
+                            # Update trade status in DB for ALL users sharing this MT5 account
+                            open_trades = Trade.objects.filter(
+                                user__exnessAccountId=user.exnessAccountId, 
+                                symbol=mt5_symbol, 
+                                status='OPEN'
+                            )
+                            for t in open_trades:
+                                t.status = 'CLOSED'
+                                t.save()
+                        else:
+                            _bot_log(user_id, f"[{now_str}] Failed to close position: {msg}")
+                    else:
+                        _bot_log(user_id, f"[{now_str}] No pattern on {mt5_symbol} ({mt5_tf}). Next scan in 30s...")
 
         except Exception as e:
             _bot_log(user_id, f"Error: {e}")
@@ -395,15 +404,37 @@ class ToggleStrategyView(APIView):
                     user.active_timeframe = None
                     user.save()
 
+                    # Stop the background bot thread
+                    stop_event = _bot_threads.pop(user.id, None)
+                    if stop_event:
+                        stop_event.set()
+
                     # Close actual open trades on MT5
                     from .models import Trade
                     from .dbtp_dbbtm import close_mt5_position
-
+                    
                     open_trades = Trade.objects.filter(user=user, status='OPEN')
-                    for trade in open_trades:
-                        success, msg = close_mt5_position(trade.symbol)
-                        trade.status = 'CLOSED'
-                        trade.save()
+                    open_trade_ids = list(open_trades.values_list('id', flat=True))
+
+                    def bg_close_trades(user_id, trade_ids):
+                        from .models import CustomUser, Trade
+                        from .dbtp_dbbtm import close_mt5_position
+                        try:
+                            bg_user = CustomUser.objects.get(id=user_id)
+                            trades_to_close = Trade.objects.filter(id__in=trade_ids)
+                            for t in trades_to_close:
+                                close_mt5_position(t.symbol, user=bg_user)
+                                t.status = 'CLOSED'
+                                t.save()
+                        except Exception as e:
+                            print(f"[BG Close Error] {e}")
+
+                    t = threading.Thread(
+                        target=bg_close_trades,
+                        args=(user.id, open_trade_ids),
+                        daemon=True
+                    )
+                    t.start()
 
                     return Response({'success': True, 'message': 'Strategy stopped'})
 
@@ -467,57 +498,143 @@ class TradesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = request.user
+
+        # If user hasn't connected Exness, they have no trades
+        if not user.isExnessConnected or not user.exnessAccountId:
+            return Response({
+                'success': True,
+                'data': [],
+                'metrics': {'totalPnl': 0.0, 'winRate': 0, 'totalTrades': 0}
+            })
+
+        import MetaTrader5 as mt5
+        from .dbtp_dbbtm import initialize, mt5_lock
+        from datetime import datetime, timedelta
+
+        trades_list = []
+
         try:
-            open_trades = Trade.objects.filter(user=request.user, status='OPEN')
-            if open_trades.exists():
-                import MetaTrader5 as mt5
-                from .dbtp_dbbtm import initialize
-                if initialize():
-                    for trade in open_trades:
-                        positions = mt5.positions_get(symbol=trade.symbol)
-                        found = False
-                        if positions:
-                            for pos in positions:
-                                pos_type = 'BUY' if pos.type == mt5.ORDER_TYPE_BUY else 'SELL'
-                                if pos_type == trade.type:
-                                    trade.currentPrice = pos.price_current
-                                    trade.pnl = pos.profit
-                                    trade.save()
-                                    found = True
-                                    break
-                        if not found:
-                            trade.status = 'CLOSED'
-                            trade.save()
+            with mt5_lock:
+                if not initialize(user):
+                    return Response({
+                        'success': True,
+                        'data': [],
+                        'metrics': {'totalPnl': 0.0, 'winRate': 0, 'totalTrades': 0}
+                    })
+
+                # Fetch deal history from MT5 server for the last 30 days
+                from_date = datetime.now() - timedelta(days=30)
+                to_date = datetime.now() + timedelta(hours=1)
+
+                deals = mt5.history_deals_get(from_date, to_date)
+
+                # Also fetch currently open positions
+                positions = mt5.positions_get()
+
+            # Process open positions first
+            if positions:
+                for pos in positions:
+                    pos_type = 'BUY' if pos.type == mt5.ORDER_TYPE_BUY else 'SELL'
+                    trades_list.append({
+                        'id': pos.ticket,
+                        'symbol': pos.symbol,
+                        'type': pos_type,
+                        'quantity': pos.volume,
+                        'entryPrice': pos.price_open,
+                        'currentPrice': pos.price_current,
+                        'pnl': round(pos.profit, 4),
+                        'status': 'OPEN',
+                        'created_at': datetime.fromtimestamp(pos.time).isoformat() + 'Z',
+                        'updated_at': datetime.fromtimestamp(pos.time).isoformat() + 'Z',
+                        'user': user.id,
+                    })
+
+            # Process closed deals from history
+            # MT5 deals come in pairs: DEAL_ENTRY_IN (open) and DEAL_ENTRY_OUT (close)
+            # We want to show completed round-trip trades
+            if deals:
+                # Group deals by position_id to pair entries and exits
+                from collections import defaultdict
+                position_deals = defaultdict(list)
+                for deal in deals:
+                    # Skip balance/credit operations (type 2 = DEAL_TYPE_BALANCE, etc.)
+                    if deal.type > 1:
+                        continue
+                    position_deals[deal.position_id].append(deal)
+
+                for pos_id, deal_group in position_deals.items():
+                    # Skip positions that are currently open (already added above)
+                    if positions:
+                        open_tickets = {p.ticket for p in positions}
+                        if pos_id in open_tickets:
+                            continue
+
+                    # Find entry and exit deals
+                    entry_deal = None
+                    exit_deal = None
+                    for d in deal_group:
+                        if d.entry == 0:  # DEAL_ENTRY_IN
+                            entry_deal = d
+                        elif d.entry == 1:  # DEAL_ENTRY_OUT
+                            exit_deal = d
+
+                    if entry_deal:
+                        deal_type = 'BUY' if entry_deal.type == 0 else 'SELL'
+                        pnl = round(exit_deal.profit, 4) if exit_deal else 0.0
+                        exit_price = exit_deal.price if exit_deal else entry_deal.price
+                        status = 'CLOSED' if exit_deal else 'OPEN'
+
+                        trades_list.append({
+                            'id': pos_id,
+                            'symbol': entry_deal.symbol,
+                            'type': deal_type,
+                            'quantity': entry_deal.volume,
+                            'entryPrice': entry_deal.price,
+                            'currentPrice': exit_price,
+                            'pnl': pnl,
+                            'status': status,
+                            'created_at': datetime.fromtimestamp(entry_deal.time).isoformat() + 'Z',
+                            'updated_at': datetime.fromtimestamp(exit_deal.time).isoformat() + 'Z' if exit_deal else datetime.fromtimestamp(entry_deal.time).isoformat() + 'Z',
+                            'user': user.id,
+                        })
+
         except Exception as e:
-            print(f"Error syncing MT5 trades: {e}")
+            print(f"Error fetching MT5 trade history: {e}")
+            import traceback
+            traceback.print_exc()
 
+        # Apply filter
         filter_val = request.query_params.get('filter', 'ALL')
-        sort_val = request.query_params.get('sort', 'DATE_DESC')
-        trades = Trade.objects.filter(user=request.user)
-
         if filter_val == 'WIN':
-            trades = trades.filter(pnl__gt=0)
+            trades_list = [t for t in trades_list if t['pnl'] > 0]
         elif filter_val == 'LOSS':
-            trades = trades.filter(pnl__lt=0)
+            trades_list = [t for t in trades_list if t['pnl'] < 0]
 
-        sort_map = {
-            'DATE_DESC': '-created_at',
-            'DATE_ASC': 'created_at',
-            'PROFIT_DESC': '-pnl',
-            'LOSS_DESC': 'pnl',
-        }
-        trades = trades.order_by(sort_map.get(sort_val, '-created_at'))
+        # Apply sort
+        sort_val = request.query_params.get('sort', 'DATE_DESC')
+        reverse = True
+        if sort_val == 'DATE_ASC':
+            reverse = False
+        elif sort_val == 'PROFIT_DESC':
+            trades_list.sort(key=lambda t: t['pnl'], reverse=True)
+        elif sort_val == 'LOSS_DESC':
+            trades_list.sort(key=lambda t: t['pnl'])
+        else:  # DATE_DESC (default)
+            pass
 
-        all_trades = Trade.objects.filter(user=request.user)
-        agg = all_trades.aggregate(total_pnl=Sum('pnl'))
-        total_pnl = agg['total_pnl'] or 0.0
-        wins = all_trades.filter(pnl__gt=0).count()
-        total = all_trades.count()
+        if sort_val in ('DATE_DESC', 'DATE_ASC'):
+            trades_list.sort(key=lambda t: t['created_at'], reverse=reverse)
+
+        # Compute metrics
+        total = len(trades_list)
+        total_pnl = round(sum(t['pnl'] for t in trades_list), 4)
+        wins = sum(1 for t in trades_list if t['pnl'] > 0)
         win_rate = round((wins / total * 100), 1) if total else 0
 
         return Response({
             'success': True,
-            'data': TradeSerializer(trades, many=True).data,
+            'data': trades_list,
             'metrics': {
                 'totalPnl': total_pnl,
                 'winRate': win_rate,
@@ -621,9 +738,35 @@ class ExnessConnectView(APIView):
         server = request.data.get('server', 'Exness-MT5Trial9')
         if not account_id or not password:
             return Response({'success': False, 'message': 'accountId and password required'}, status=400)
+
+        print(f"[Nextun] Exness connect attempt: account={account_id}, server={server}")
+
+        # Validate credentials via MT5 before saving
+        from .dbtp_dbbtm import initialize
+        
+        class TempUser:
+            def __init__(self, acc, pwd, srv):
+                self.exnessAccountId = acc
+                self.exnessPassword = pwd
+                self.exnessServer = srv
+                self.isExnessConnected = True
+
+        temp_user = TempUser(account_id, password, server)
+        
+        # initialize() handles its own locking internally — no outer lock needed
+        success = initialize(temp_user)
+        if not success:
+            print(f"[Nextun] Exness connect FAILED for account={account_id}, server={server}")
+            return Response({
+                'success': False, 
+                'message': f'Failed to link Exness. Please verify your Account ID, Password, and Server Name ({server}), and ensure the server is scanned in MetaTrader.'
+            }, status=400)
+
+        print(f"[Nextun] Exness connect SUCCESS for account={account_id}")
         user = request.user
-        user.exnessAccountId = account_id
-        user.exnessServer = server
+        user.exnessAccountId = account_id.strip()
+        user.exnessServer = server.strip()
+        user.exnessPassword = password.strip()
         user.isExnessConnected = True
         user.save()
         return Response({'success': True, 'message': 'Exness connected successfully'})
@@ -636,15 +779,29 @@ class ExnessDashboardView(APIView):
         user = request.user
         if not user.isExnessConnected:
             return Response({'success': False, 'message': 'Exness not connected'}, status=400)
-        # Return mock data; replace with real MT5 bridge data
+            
+        import MetaTrader5 as mt5
+        from .dbtp_dbbtm import initialize, mt5_lock
+
+        # Fetch real MT5 data instead of mock data
+        with mt5_lock:
+            if not initialize(user):
+                return Response({'success': False, 'message': 'Failed to connect to MT5 account'}, status=500)
+                
+            account_info = mt5.account_info()
+            if account_info is None:
+                return Response({'success': False, 'message': 'Failed to retrieve account info'}, status=500)
+                
+            data = {
+                'balance': account_info.balance,
+                'margin': account_info.margin,
+                'freeMargin': account_info.margin_free,
+                'equity': account_info.equity,
+            }
+
         return Response({
             'success': True,
-            'data': {
-                'balance': 10000.0,
-                'margin': 1200.0,
-                'freeMargin': 8800.0,
-                'equity': 10200.0,
-            }
+            'data': data
         })
 
 
@@ -706,7 +863,7 @@ class ExecuteStrategyView(APIView):
         else:
             from .dbtp_dbbtm import get_signal
 
-        signal = get_signal(symbol, timeframe)
+        signal = get_signal(symbol, timeframe,user=user)
         
         action = signal.get("action", "NONE")
         if action == "NONE":
@@ -731,25 +888,27 @@ class ExecuteStrategyView(APIView):
         tp = signal.get("tp", 300)
 
         # 3. Connect to Exness and place trade
-        gateway = ExnessDummyGateway(
-            account_id=user.exnessAccountId,
-            password=user.exnessPassword,
-            server=user.exnessServer
-        )
-
-        try:
-            result = gateway.place_simulated_order(
-                symbol=symbol,
-                action_type=action,
-                volume=volume,
-                stop_loss_points=sl,
-                take_profit_points=tp
+        from .dbtp_dbbtm import mt5_lock
+        with mt5_lock:
+            gateway = ExnessDummyGateway(
+                account_id=user.exnessAccountId,
+                password=user.exnessPassword,
+                server=user.exnessServer
             )
-        except Exception as e:
-            gateway.close_session()
-            return Response({'success': False, 'message': f"Failed to execute trade: {str(e)}"}, status=500)
 
-        gateway.close_session()
+            try:
+                result = gateway.place_simulated_order(
+                    symbol=symbol,
+                    action_type=action,
+                    volume=volume,
+                    stop_loss_points=sl,
+                    take_profit_points=tp
+                )
+            except Exception as e:
+                gateway.close_session()
+                return Response({'success': False, 'message': f"Failed to execute trade: {str(e)}"}, status=500)
+
+            gateway.close_session()
 
         if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
             reason = result.comment if result else "Unknown MT5 Error"

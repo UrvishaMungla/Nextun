@@ -26,25 +26,16 @@ class ExnessDummyGateway:
 
         mt5.shutdown()
 
+        # Pass credentials directly to initialize() so MT5 logs in silently
+        # in one step — no login dialog popup will appear.
         if not mt5.initialize(
             path=self.terminal_path,
-            timeout=60000,
-        ):
-            logger.error(f"MT5 Initialization Failed: {mt5.last_error()}")
-            return False
-
-        print("MT5 Version:", mt5.version())
-        print("Terminal Info:", mt5.terminal_info())
-
-        authorized = mt5.login(
             login=self.account_id,
             password=self.password,
             server=self.server,
-        )
-
-        if not authorized:
-            logger.error(f"MT5 Login Failed: {mt5.last_error()}")
-            mt5.shutdown()
+            timeout=60000,
+        ):
+            logger.error(f"MT5 Initialize+Login Failed: {mt5.last_error()}")
             return False
 
         account_info = mt5.account_info()
