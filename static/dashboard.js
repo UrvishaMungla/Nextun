@@ -76,91 +76,93 @@ document.addEventListener('DOMContentLoaded', function () {
             sessionStorage.setItem('dt_strategy_active', 'true');
             if (data.symbol) sessionStorage.setItem('dt_strategy_symbol', data.symbol);
             if (data.timeframe) sessionStorage.setItem('dt_strategy_timeframe', data.timeframe);
+            if (data.strategyName) sessionStorage.setItem('dt_strategy_name', data.strategyName);
           } else {
             sessionStorage.removeItem('dt_strategy_active');
           }
+          updateStrategyUI();
         }
       }
-    } catch (e) { }
 
-    // -- 1. Strategy Status Card --
-    // FIX: Strategy is ONLY shown as Active when BOTH:
-    //   (a) dt_strategy_active === 'true'  (user clicked Activate)
-    //   (b) bt_trades has actual trade data (backtest was run, not just activated)
-    var isStratActive = sessionStorage.getItem('dt_strategy_active') === 'true';
-    var btTradesRaw = sessionStorage.getItem('bt_trades');
-    var hasBacktestData = false;
-    if (btTradesRaw) {
-      try { hasBacktestData = JSON.parse(btTradesRaw).length > 0; } catch (e) { }
-    }
-    // Show as active if the strategy is enabled by the user
-    var isReallyActive = isStratActive;
-
-    var stratName = sessionStorage.getItem('dt_strategy_name') || 'No Active Strategy';
-    var stratSymbol = sessionStorage.getItem('dt_strategy_symbol') || '';
-    var stratTf = sessionStorage.getItem('dt_strategy_timeframe') || '';
-    var stratWinRate = sessionStorage.getItem('dt_strategy_winrate') || '--';
-    var stratRR = sessionStorage.getItem('dt_strategy_rr') || '1:2';
-
-    var nameEl = document.getElementById('dash-strategy-name');
-    var descEl = document.getElementById('dash-strategy-desc');
-    var swEl = document.getElementById('dash-strategy-switch');
-    var smEl = document.getElementById('dash-strategy-metrics');
-    var wrEl = document.getElementById('dash-strategy-winrate');
-    var rrEl = document.getElementById('dash-strategy-rr');
-
-    // Default state: No Active Strategy
-    if (nameEl) nameEl.textContent = 'No Active Strategy';
-    if (descEl) descEl.textContent = 'Navigate to the Strategies page to enable one.';
-    if (swEl) swEl.style.display = 'none';
-    if (smEl) smEl.style.display = 'none';
-
-    // 1. Fetch real active strategy state directly from Database/Backend
-    try {
-      const token = localStorage.getItem('nextunToken');
+      // Fetch live trades for dashboard P&L and Calendar
       if (token) {
-        const res = await fetch('/api/bot/status', {
+        const tradesRes = await fetch('/api/trades', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await res.json();
-
-        // If the backend says a strategy is actively running, update the UI dynamically
-        if (data.success && data.running && data.strategy_name) {
-          if (nameEl) nameEl.textContent = data.strategy_name;
-          if (descEl) descEl.textContent = `${data.symbol || ''} | ${data.timeframe || ''} | Auto-Running`;
-          if (wrEl) wrEl.textContent = data.success_rate || '--';
-          if (rrEl) rrEl.textContent = data.risk_reward || '1:2';
-          if (swEl) swEl.style.display = 'block';
-          if (smEl) smEl.style.display = 'flex';
+        const tradesData = await tradesRes.json();
+        if (tradesData.success && tradesData.data) {
+          window.liveTrades = tradesData.data;
+          window.liveMetrics = tradesData.metrics || {};
+        } else {
+          window.liveTrades = [];
+          window.liveMetrics = {};
         }
       }
-    } catch (e) {
-      console.error("Failed to sync dashboard strategy state from DB", e);
+    } catch(e) {
+      window.liveTrades = [];
+      window.liveMetrics = {};
     }
 
+    // -- 1. Strategy Status Card --
+    function updateStrategyUI() {
+      // FIX: Strategy is ONLY shown as Active when BOTH:
+      //   (a) dt_strategy_active === 'true'  (user clicked Activate)
+      //   (b) bt_trades has actual trade data (backtest was run, not just activated)
+      var isStratActive = sessionStorage.getItem('dt_strategy_active') === 'true';
+      var btTradesRaw   = sessionStorage.getItem('bt_trades');
+      var hasBacktestData = false;
+      if (btTradesRaw) {
+        try { hasBacktestData = JSON.parse(btTradesRaw).length > 0; } catch(e) {}
+      }
+      // Show as active if the strategy is enabled by the user
+      var isReallyActive = isStratActive;
+  
+      var stratName    = sessionStorage.getItem('dt_strategy_name')      || 'No Active Strategy';
+      var stratSymbol  = sessionStorage.getItem('dt_strategy_symbol')    || '';
+      var stratTf      = sessionStorage.getItem('dt_strategy_timeframe') || '';
+      var stratWinRate = sessionStorage.getItem('dt_strategy_winrate')   || '--';
+      var stratRR      = sessionStorage.getItem('dt_strategy_rr')        || '1:2';
+  
+      var nameEl = document.getElementById('dash-strategy-name');
+      var descEl = document.getElementById('dash-strategy-desc');
+      var swEl   = document.getElementById('dash-strategy-switch');
+      var smEl   = document.getElementById('dash-strategy-metrics');
+      var wrEl   = document.getElementById('dash-strategy-winrate');
+      var rrEl   = document.getElementById('dash-strategy-rr');
+  
+      if (isReallyActive && stratName !== 'No Active Strategy') {
+        if (nameEl) nameEl.textContent = stratName;
+        if (descEl) descEl.textContent = stratSymbol + ' | ' + stratTf + ' | Auto-Running';
+        if (wrEl)   wrEl.textContent   = stratWinRate;
+        if (rrEl)   rrEl.textContent   = stratRR;
+        if (swEl)   swEl.style.display = 'block';
+        if (smEl)   smEl.style.display = 'flex';
+      } else {
+        if (nameEl) nameEl.textContent = 'No Active Strategy';
+        if (descEl) descEl.textContent = 'Navigate to the Strategies page to enable one.';
+        if (swEl)   swEl.style.display = 'none';
+        if (smEl)   smEl.style.display = 'none';
+      }
+    }
+    
+    // Call it initially in case session variables are already set
+    updateStrategyUI();
+
     // -- 2. P&L Cards --
-    var btSummaryRaw = sessionStorage.getItem('bt_summary');
-    if (btSummaryRaw) {
-      var summary = JSON.parse(btSummaryRaw);
-      var totalPnl = summary.total_pnl || 0;
-      var totalEl = document.getElementById('metric-total-pnl');
+    if (window.liveMetrics) {
+      var totalPnl = window.liveMetrics.totalPnl || 0;
+      var totalEl  = document.getElementById('metric-total-pnl');
       if (totalEl) {
         totalEl.textContent = fmt(totalPnl);
         totalEl.className = totalPnl >= 0 ? 'text-green' : 'text-red';
       }
       var totalSubEl = document.getElementById('metric-total-pnl-sub');
-      if (totalSubEl) totalSubEl.textContent = 'Last 6 months - ' + (summary.total_trades || 0) + ' trades';
+      if (totalSubEl) totalSubEl.textContent = 'All time - ' + (window.liveMetrics.totalTrades || 0) + ' trades';
     }
 
-    // FIX: Monthly/Yearly P&L uses the backtest data date range, NOT today's real date.
-    // "Today" = the date of the most recent (last) trade in backtest data
-    // "Monthly" = that calendar month, "Yearly" = that calendar year
-    if (btTradesRaw && hasBacktestData) {
-      var trades = JSON.parse(btTradesRaw);
-
-      var lastTrade = trades[trades.length - 1];
-      var refDate = parseDateStr(lastTrade.exit_time);
-      if (!refDate) refDate = new Date();
+    if (window.liveTrades && window.liveTrades.length > 0) {
+      var trades = window.liveTrades;
+      var refDate = new Date();
 
       var refYear = refDate.getFullYear();
       var refMonth = refDate.getMonth();
@@ -172,10 +174,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
       var todayPnl = 0, monthPnl = 0, yearPnl = 0;
 
-      trades.forEach(function (t) {
-        if (!t.exit_time) return;
+      trades.forEach(function(t) {
+        if (!t.created_at) return;
         var pnl = t.pnl || 0;
-        var d = parseDateStr(t.exit_time);
+        var d   = parseDateStr(t.created_at);
         if (!d) return;
         var dStr = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
         var mStr = d.getFullYear() + '-' + pad2(d.getMonth() + 1);
@@ -195,8 +197,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       var todaySub = document.getElementById('metric-todays-pnl-sub');
       var monthSub = document.getElementById('metric-monthly-pnl-sub');
-      var yearSub = document.getElementById('metric-yearly-pnl-sub');
-      if (todaySub) todaySub.textContent = 'from closed trades today (' + refDateStr + ')';
+      var yearSub  = document.getElementById('metric-yearly-pnl-sub');
+      if (todaySub) todaySub.textContent = 'closed trades today (' + refDateStr + ')';
       if (monthSub) monthSub.textContent = 'current calendar month (' + refMonthStr + ')';
       if (yearSub) yearSub.textContent = 'current calendar year (' + refYearStr + ')';
 
@@ -204,6 +206,9 @@ document.addEventListener('DOMContentLoaded', function () {
       updateCard('metric-monthly-pnl', monthPnl);
       updateCard('metric-yearly-pnl', yearPnl);
     }
+    
+    // Call calendar fetch after fetching live trades
+    fetchCalendarData();
   }
 
   // --- Calendar ---
@@ -211,9 +216,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // Build dateMap: { "YYYY-MM-DD": totalPnl }
   function buildDateMap(trades) {
     var dateMap = {};
-    trades.forEach(function (t) {
-      if (!t.exit_time) return;
-      var d = parseDateStr(t.exit_time);
+    trades.forEach(function(t) {
+      if (!t.created_at) return;
+      var d = parseDateStr(t.created_at);
       if (!d) return;
       var key = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
       dateMap[key] = (dateMap[key] || 0) + (t.pnl || 0);
@@ -222,28 +227,15 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function fetchCalendarData() {
-    var raw = sessionStorage.getItem('bt_trades');
-    if (!raw) { renderCalendar([], {}); return; }
+    var trades = window.liveTrades || [];
+    if (!trades || trades.length === 0) { renderCalendar([], {}); return; }
     try {
-      var trades = JSON.parse(raw);
-      if (!trades || trades.length === 0) { renderCalendar([], {}); return; }
-
       var dateMap = buildDateMap(trades);
 
-      // FIX: On first load, jump to the LAST trade's month/year
-      // Store calYear and calMonth as plain integers, NOT inside a Date object.
-      // Using Date.setMonth() on a shared Date object causes overflow (e.g. Dec+1 = 2367 bug).
       if (!window.calendarInitialized) {
-        var lastTrade = trades[trades.length - 1];
-        var lastDate = parseDateStr(lastTrade.exit_time);
-        if (lastDate) {
-          window.calYear = lastDate.getFullYear();
-          window.calMonth = lastDate.getMonth();  // 0=Jan ... 11=Dec
-        } else {
-          var now = new Date();
-          window.calYear = now.getFullYear();
-          window.calMonth = now.getMonth();
-        }
+        var now = new Date();
+        window.calYear  = now.getFullYear();
+        window.calMonth = now.getMonth();
         window.calendarInitialized = true;
       }
 
@@ -277,12 +269,11 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function reloadCalendar() {
-    var raw = sessionStorage.getItem('bt_trades');
-    if (!raw) { renderCalendar([], {}); return; }
+    var trades = window.liveTrades || [];
+    if (!trades || trades.length === 0) { renderCalendar([], {}); return; }
     try {
-      var allTrades = JSON.parse(raw);
-      var dateMap = buildDateMap(allTrades);
-      var records = Object.keys(dateMap).map(function (d) { return { date: d, pnl: dateMap[d] }; });
+      var dateMap   = buildDateMap(trades);
+      var records   = Object.keys(dateMap).map(function(d) { return { date: d, pnl: dateMap[d] }; });
       renderCalendar(records, dateMap);
     } catch (e) { }
   }
@@ -357,7 +348,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ─── Boot ──────────────────────────────────────────────────────────────────
   initDashboard();
-  fetchCalendarData();
 
   const menuToggle = document.getElementById("menuToggle");
   const sidebar = document.querySelector(".sidebar");

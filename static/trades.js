@@ -81,41 +81,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       allTrades = data.data;
     }
 
-    // Load backtest trades if available
-    const btTradesJson = sessionStorage.getItem('bt_trades');
-    if (btTradesJson) {
-      try {
-        const btTrades = JSON.parse(btTradesJson);
-        const mappedBtTrades = btTrades.map(t => ({
-          ...t,
-          type: t.type === 'LONG' ? 'BUY' : (t.type === 'SHORT' ? 'SELL' : t.type),
-          entryPrice: t.entry_price || t.entryPrice,
-          currentPrice: t.exit_price || t.currentPrice,
-          quantity: t.quantity || 1,
-          created_at: t.entry_time // for sorting
-        }));
-        allTrades = [...mappedBtTrades, ...allTrades];
-      } catch (e) {
-        console.error('Failed to parse backtest trades', e);
-      }
-    }
+
 
     if (allTrades.length > 0) {
       const trades = allTrades;
       const metrics = data.metrics || {};
 
-      // If we have backtest summary, we can merge metrics or just show combined stats
-      const btSummaryJson = sessionStorage.getItem('bt_summary');
-      if (btSummaryJson && allTrades.length > (data.data ? data.data.length : 0)) {
-        try {
-          const btSummary = JSON.parse(btSummaryJson);
-          metrics.totalTrades = (metrics.totalTrades || 0) + btSummary.total_trades;
-          metrics.totalPnl = (metrics.totalPnl || 0) + btSummary.total_pnl;
-          // approximate win rate
-          const totalWins = (data.data ? data.data.filter(t => t.pnl > 0).length : 0) + btSummary.wins + (btSummary.partials || 0);
-          metrics.winRate = metrics.totalTrades > 0 ? ((totalWins / metrics.totalTrades) * 100).toFixed(1) : 0;
-        } catch (e) {}
-      }
+
 
       // Update metric cards
       if (metrics) {
