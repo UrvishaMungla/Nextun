@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/';
   });
 
-  // Sync activation state with backend — only ONE strategy can be active at a time
+  // Sync activation state with backend — supports MULTIPLE concurrent strategies
   (async function syncState() {
     try {
       const token = sessionStorage.getItem('nextunToken');
@@ -54,53 +54,44 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (!data.success) return;
 
-      const isLT = data.strategy_name && data.strategy_name.includes('Liquidity');
-      const isDT = data.strategy_name && data.strategy_name.includes('Double');
+      const activeList = data.active_strategies || [];
+      const isDT = activeList.some(s => s.strategy_name && s.strategy_name.includes('Double'));
+      const isLT = activeList.some(s => s.strategy_name && s.strategy_name.includes('Liquidity'));
+      const dtEntry = activeList.find(s => s.strategy_name && s.strategy_name.includes('Double'));
+      const ltEntry = activeList.find(s => s.strategy_name && s.strategy_name.includes('Liquidity'));
 
-      if (data.running && isDT) {
-        // Double Top bot is running → activate DT card, deactivate LT card
-        localStorage.setItem('dt_strategy_active', 'true');
-        localStorage.removeItem('lt_strategy_active');
+      if (isDT && dtEntry && dtEntry.running) {
+        sessionStorage.setItem('dt_strategy_active', 'true');
         setActiveState(true);
-        ltSetActiveState(false);
         const execBtn = document.getElementById('dt-execute-btn');
         const panel = document.getElementById('bot-panel');
         if (execBtn) { execBtn.textContent = 'Stop Live Strategy'; execBtn.classList.add('active-state'); }
         if (panel) { panel.style.display = 'block'; }
         const log = document.getElementById('bot-log');
-        if (log) startBotStatusPolling(token, log);
-
-      } else if (data.running && isLT) {
-        // Liquidity Trap bot is running → activate LT card, deactivate DT card
-        localStorage.removeItem('dt_strategy_active');
-        localStorage.setItem('lt_strategy_active', 'true');
-        setActiveState(false);
-        ltSetActiveState(true);
-        // Reset DT execute button to default
-        const execBtn = document.getElementById('dt-execute-btn');
-        const panel = document.getElementById('bot-panel');
-        if (execBtn) { execBtn.textContent = 'Run Live Strategy'; execBtn.classList.remove('active-state'); }
-        if (panel) { panel.style.display = 'none'; }
-        // Resume LT bot log polling
-        const ltLog = document.getElementById('lt-bot-log');
-        const ltPanel = document.getElementById('lt-bot-panel');
-        const ltLabel = document.getElementById('lt-bot-label-text');
-        if (ltPanel) ltPanel.style.display = 'block';
-        if (ltLabel) { ltLabel.textContent = 'Bot: ACTIVE 🟢'; ltLabel.style.color = '#16a34a'; }
-        const ltToggle = document.getElementById('lt-bot-toggle');
-        if (ltToggle) ltToggle.checked = true;
-        if (ltLog) startBotStatusPolling(token, ltLog);
-
+        if (log) startBotStatusPolling(token, log, dtEntry.strategy_id);
       } else {
-        // Nothing running — reset both cards to inactive state
-        localStorage.removeItem('dt_strategy_active');
-        localStorage.removeItem('lt_strategy_active');
+        sessionStorage.removeItem('dt_strategy_active');
         setActiveState(false);
-        ltSetActiveState(false);
         const execBtn = document.getElementById('dt-execute-btn');
         if (execBtn) { execBtn.textContent = 'Run Live Strategy'; execBtn.classList.remove('active-state'); }
         const panel = document.getElementById('bot-panel');
         if (panel) panel.style.display = 'none';
+      }
+
+      if (isLT && ltEntry && ltEntry.running) {
+        sessionStorage.setItem('lt_strategy_active', 'true');
+        ltSetActiveState(true);
+        const ltLog = document.getElementById('lt-bot-log');
+        const ltPanel = document.getElementById('lt-bot-panel');
+        const ltLabel = document.getElementById('lt-bot-label-text');
+        const ltToggle = document.getElementById('lt-bot-toggle');
+        if (ltPanel) ltPanel.style.display = 'block';
+        if (ltLabel) { ltLabel.textContent = 'Bot: ACTIVE 🟢'; ltLabel.style.color = '#16a34a'; }
+        if (ltToggle) ltToggle.checked = true;
+        if (ltLog) startLtBotStatusPolling(token, ltEntry.strategy_id);
+      } else {
+        sessionStorage.removeItem('lt_strategy_active');
+        ltSetActiveState(false);
         const ltPanel = document.getElementById('lt-bot-panel');
         const ltLabel = document.getElementById('lt-bot-label-text');
         const ltToggle = document.getElementById('lt-bot-toggle');
@@ -149,17 +140,6 @@ function toggleActivate() {
   sessionStorage.setItem('dt_strategy_active', next ? 'true' : 'false');
 
   if (next) {
-    // ── EXCLUSIVE: Kill Liquidity Trap UI completely ──
-    localStorage.removeItem('lt_strategy_active');
-    ltSetActiveState(false);
-    const ltPanel = document.getElementById('lt-bot-panel');
-    const ltLabel = document.getElementById('lt-bot-label-text');
-    const ltToggle = document.getElementById('lt-bot-toggle');
-    if (ltPanel) ltPanel.style.display = 'none';
-    if (ltLabel) { ltLabel.textContent = 'Bot: OFF'; ltLabel.style.color = ''; }
-    if (ltToggle) ltToggle.checked = false;
-    if (typeof ltBotInterval !== 'undefined' && ltBotInterval) { clearInterval(ltBotInterval); ltBotInterval = null; }
-
     // Save strategy info for Dashboard to read
     const symbol = document.getElementById('bt-symbol')?.value || 'EURUSD=X';
     const timeframe = document.getElementById('bt-timeframe')?.value || '1h';
@@ -230,16 +210,7 @@ async function executeLiveStrategy() {
     if (data.success) {
       // Use exact match — "Strategy activated" vs "Strategy stopped"
       if (data.message === 'Strategy activated') {
-        // Started
-        // Stop LT if it was running
-        localStorage.removeItem('lt_strategy_active');
-        ltSetActiveState(false);
-        const ltExecBtn = document.getElementById('lt-execute-btn');
-        const ltPanel = document.getElementById('lt-bot-panel');
-        if (ltExecBtn) { ltExecBtn.textContent = 'Run Live Strategy'; ltExecBtn.classList.remove('active-state'); }
-        if (ltPanel) { ltPanel.style.display = 'none'; }
-        if (typeof ltBotStatusInterval !== 'undefined' && ltBotStatusInterval) { clearInterval(ltBotStatusInterval); ltBotStatusInterval = null; }
-
+        // Started — do NOT touch the LT strategy card
         execBtn.textContent = 'Stop Live Strategy';
         execBtn.classList.add('active-state');
         panel.style.display = 'block';
@@ -253,8 +224,8 @@ async function executeLiveStrategy() {
         sessionStorage.setItem('dt_strategy_timeframe', timeframe);
         sessionStorage.setItem('dt_strategy_rr', '1:2');
 
-        // Start polling bot status every 5 seconds
-        startBotStatusPolling(token, log);
+        // Start polling bot status (strategy id=1 for Double Top)
+        startBotStatusPolling(token, log, 1);
 
       } else {
         // Stopped
@@ -290,7 +261,7 @@ async function executeLiveStrategy() {
   }
 }
 
-function startBotStatusPolling(token, logEl) {
+function startBotStatusPolling(token, logEl, strategyId) {
   // Clear any existing interval
   if (botStatusInterval) clearInterval(botStatusInterval);
 
@@ -298,7 +269,8 @@ function startBotStatusPolling(token, logEl) {
 
   botStatusInterval = setInterval(async () => {
     try {
-      const res = await fetch('/api/bot/status', {
+      const url = strategyId ? `/api/bot/status?strategyId=${strategyId}` : '/api/bot/status';
+      const res = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -314,10 +286,13 @@ function startBotStatusPolling(token, logEl) {
       if (data.success && !data.running) {
         const btn = document.getElementById('dt-execute-btn');
         if (btn && btn.textContent.includes('Stop')) {
-          btn.textContent = '⚡ Run Live Strategy';
+          btn.textContent = 'Run Live Strategy';
           btn.classList.remove('active-state');
+          sessionStorage.setItem('dt_strategy_active', 'false');
           clearInterval(botStatusInterval);
           botStatusInterval = null;
+          const panel = document.getElementById('bot-panel');
+          if (panel) panel.style.display = 'none';
         }
       }
     } catch (e) {
@@ -477,14 +452,14 @@ async function toggleBot(checkbox) {
         log.innerHTML = '';
         addLog('[SYSTEM] Real Backend Bot activated! Live logs will appear below...');
 
-        // Sync Dashboard variables
+        // Sync Dashboard variables — do NOT touch LT strategy
         sessionStorage.setItem('dt_strategy_active', 'true');
         sessionStorage.setItem('dt_strategy_name', 'Double Top / Double Bottom');
         sessionStorage.setItem('dt_strategy_symbol', symbol);
         sessionStorage.setItem('dt_strategy_timeframe', timeframe);
         sessionStorage.setItem('dt_strategy_rr', '1:2');
 
-        startBotStatusPolling(token, log);
+        startBotStatusPolling(token, log, strategyId);
       } else {
         label.textContent = 'Bot: OFF';
         label.style.color = '';
@@ -573,14 +548,15 @@ function ltAddLog(msg) {
 // ================= BOT POLLING =================
 let ltBotStatusInterval = null;
 
-function startLtBotStatusPolling(token) {
+function startLtBotStatusPolling(token, strategyId) {
   if (ltBotStatusInterval) clearInterval(ltBotStatusInterval);
 
   let lastLogCount = 0;
 
   ltBotStatusInterval = setInterval(async () => {
     try {
-      const res = await fetch('/api/bot/status', {
+      const sid = strategyId || 2;
+      const res = await fetch(`/api/bot/status?strategyId=${sid}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -592,14 +568,18 @@ function startLtBotStatusPolling(token) {
         lastLogCount = data.logs.length;
       }
 
-      // Bot stopped externally
-      if (data.success && data.activeStrategy === null) {
+      // Bot stopped on its own — update button
+      if (data.success && !data.running) {
         const execBtn = document.getElementById('lt-execute-btn');
-
         if (execBtn && execBtn.classList.contains('active-state')) {
           execBtn.textContent = 'Run Live Strategy';
           execBtn.classList.remove('active-state');
-          ltAddLog('[SYSTEM] Bot stopped from another session.');
+          sessionStorage.setItem('lt_strategy_active', 'false');
+          ltAddLog('[SYSTEM] Bot stopped.');
+          clearInterval(ltBotStatusInterval);
+          ltBotStatusInterval = null;
+          const ltPanel = document.getElementById('lt-bot-panel');
+          if (ltPanel) ltPanel.style.display = 'none';
         }
       }
 
@@ -611,7 +591,7 @@ function startLtBotStatusPolling(token) {
 
 // ================= LIVE STRATEGY =================
 async function ltExecuteLiveStrategy() {
-  const token = localStorage.getItem('nextunToken');
+  const token = sessionStorage.getItem('nextunToken');
 
   if (!token) {
     alert("Please log in first.");
@@ -661,10 +641,7 @@ async function ltExecuteLiveStrategy() {
     if (data.success) {
       if (data.message === 'Strategy activated') {
 
-        // Stop DT live if running
-        localStorage.removeItem('dt_strategy_active');
-        setActiveState(false);
-
+        // Activated — do NOT touch the DT strategy card
         ltSetActiveState(true);
 
         panel.style.display = 'block';
@@ -672,13 +649,13 @@ async function ltExecuteLiveStrategy() {
 
         ltAddLog('[SYSTEM] Liquidity Trap Bot activated');
 
-        localStorage.setItem('lt_strategy_active', 'true');
-        localStorage.setItem('lt_strategy_name', 'Liquidity Trap & Inducement');
-        localStorage.setItem('lt_strategy_symbol', symbol);
-        localStorage.setItem('lt_strategy_timeframe', timeframe);
-        localStorage.setItem('lt_strategy_rr', '1:2');
+        sessionStorage.setItem('lt_strategy_active', 'true');
+        sessionStorage.setItem('lt_strategy_name', 'Liquidity Trap & Inducement');
+        sessionStorage.setItem('lt_strategy_symbol', symbol);
+        sessionStorage.setItem('lt_strategy_timeframe', timeframe);
+        sessionStorage.setItem('lt_strategy_rr', '1:2');
 
-        startLtBotStatusPolling(token);
+        startLtBotStatusPolling(token, strategyId);
 
       } else {
         // STOP
@@ -694,11 +671,11 @@ async function ltExecuteLiveStrategy() {
           panel.style.display = 'none';
         }, 2000);
 
-        localStorage.removeItem('lt_strategy_active');
-        localStorage.removeItem('lt_strategy_name');
-        localStorage.removeItem('lt_strategy_symbol');
-        localStorage.removeItem('lt_strategy_timeframe');
-        localStorage.removeItem('lt_strategy_rr');
+        sessionStorage.removeItem('lt_strategy_active');
+        sessionStorage.removeItem('lt_strategy_name');
+        sessionStorage.removeItem('lt_strategy_symbol');
+        sessionStorage.removeItem('lt_strategy_timeframe');
+        sessionStorage.removeItem('lt_strategy_rr');
       }
 
     } else {
@@ -726,25 +703,20 @@ function ltToggleActivate() {
     const symbol = document.getElementById('lt-symbol')?.value || 'EURUSD=X';
     const timeframe = document.getElementById('lt-timeframe')?.value || '5m';
 
-    sessionStorage.setItem('dt_strategy_name', 'Liquidity Trap');
-    sessionStorage.setItem('dt_strategy_symbol', symbol);
-    sessionStorage.setItem('dt_strategy_timeframe', timeframe);
-    sessionStorage.setItem('dt_strategy_rr', '1:2');
-
-    // Stop DT backtest if running
-    if (sessionStorage.getItem('dt_strategy_active') === 'true') {
-      sessionStorage.setItem('dt_strategy_active', 'false');
-      setActiveState(false);
-    }
+    // Save LT strategy info — do NOT touch DT state
+    sessionStorage.setItem('lt_strategy_name', 'Liquidity Trap');
+    sessionStorage.setItem('lt_strategy_symbol', symbol);
+    sessionStorage.setItem('lt_strategy_timeframe', timeframe);
+    sessionStorage.setItem('lt_strategy_rr', '1:2');
 
     ltSetActiveState(true);
     ltRunBacktest();
 
   } else {
-    sessionStorage.removeItem('dt_strategy_name');
-    sessionStorage.removeItem('dt_strategy_symbol');
-    sessionStorage.removeItem('dt_strategy_timeframe');
-    sessionStorage.removeItem('dt_strategy_winrate');
+    sessionStorage.removeItem('lt_strategy_name');
+    sessionStorage.removeItem('lt_strategy_symbol');
+    sessionStorage.removeItem('lt_strategy_timeframe');
+    sessionStorage.removeItem('lt_strategy_winrate');
     sessionStorage.removeItem('bt_trades');
     sessionStorage.removeItem('bt_summary');
 
@@ -835,7 +807,7 @@ async function ltToggleBot(checkbox) {
   const label = document.getElementById('lt-bot-label-text');
   const log = document.getElementById('lt-bot-log');
 
-  const token = localStorage.getItem('nextunToken');
+  const token = sessionStorage.getItem('nextunToken');
   if (!token) {
     alert("Please log in first to run the live strategy.");
     checkbox.checked = false;

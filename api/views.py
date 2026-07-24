@@ -255,8 +255,8 @@ import threading
 from collections import deque
 
 # ── Background Bot Engine (runs inside Django process) ──────────
-_bot_threads = {}   # user_id -> threading.Event (stop flag)
-_bot_logs = {}      # user_id -> deque of log strings (max 50)
+_bot_threads = {}   # (user_id, strategy_id) -> threading.Event (stop flag)
+_bot_logs = {}      # (user_id, strategy_id) -> deque of log strings (max 50)
 
 # Map Yahoo-style symbols to MT5 symbols (Exness without suffix)
 SYMBOL_MAP = {
@@ -271,47 +271,47 @@ TF_MAP = {
 }
 
 
-def _bot_log(user_id, msg):
+def _bot_log(user_id, strategy_id, msg):
     """Add a log message to the user's bot log buffer and print to terminal."""
-    if user_id not in _bot_logs:
-        _bot_logs[user_id] = deque(maxlen=50)
-    _bot_logs[user_id].append(msg)
+    key = (user_id, strategy_id)
+    if key not in _bot_logs:
+        _bot_logs[key] = deque(maxlen=50)
+    _bot_logs[key].append(msg)
     print(f"[BOT] {msg}")
 
 
-def _run_bot_loop(user_id, stop_event):
+def _run_bot_loop(user_id, strategy_id, stop_event):
     """Background thread that scans for patterns every 30 seconds."""
     import time as _time
     from .dbtp_dbbtm import get_signal, mt5_lock, initialize, place_real_mt5_trade, close_mt5_position
-    from .models import CustomUser, Trade
+    from .models import CustomUser, Trade, UserActiveStrategy
 
-    _bot_log(user_id, "Bot engine started!")
+    _bot_log(user_id, strategy_id, "Bot engine started!")
 
     while not stop_event.is_set():
         try:
             user = CustomUser.objects.get(id=user_id)
-            if not user.activeStrategy or not user.active_symbol:
-                _bot_log(user_id, "No active strategy found. Stopping.")
+            try:
+                active_strat = UserActiveStrategy.objects.get(user=user, strategy_id=strategy_id)
+            except UserActiveStrategy.DoesNotExist:
+                _bot_log(user_id, strategy_id, "No active strategy found in DB. Stopping.")
                 break
 
-            raw_symbol = user.active_symbol
-            raw_tf = user.active_timeframe
+            raw_symbol = active_strat.symbol
+            raw_tf = active_strat.timeframe
 
             mt5_symbol = SYMBOL_MAP.get(raw_symbol, raw_symbol)
             mt5_tf = TF_MAP.get(raw_tf, raw_tf)
 
             now_str = datetime.now().strftime("%H:%M:%S")
-            _bot_log(user_id, f"[{now_str}] Scanning {mt5_symbol} ({mt5_tf}) — fetching 300 candles from MT5...")
+            _bot_log(user_id, strategy_id, f"[{now_str}] Scanning {mt5_symbol} ({mt5_tf}) — fetching 300 candles from MT5...")
 
             # Hold the MT5 lock for the ENTIRE scan+trade cycle.
-            # This prevents another user's bot thread from switching the MT5
-            # account in between our signal check and trade placement.
             with mt5_lock:
                 if not initialize(user):
-                    _bot_log(user_id, f"[{now_str}] Failed to connect to MT5. Will retry in 30s...")
-                    # Skip to sleep
+                    _bot_log(user_id, strategy_id, f"[{now_str}] Failed to connect to MT5. Will retry in 30s...")
                 else:
-                    if user.activeStrategy.name == 'Liquidity Trap & Inducement':
+                    if active_strat.strategy.name == 'Liquidity Trap & Inducement':
                         from .liquidity_trap_mt5 import get_signal as liq_get_signal
                         signal = liq_get_signal(mt5_symbol, mt5_tf, user=user)
                     else:
@@ -319,12 +319,11 @@ def _run_bot_loop(user_id, stop_event):
                     action = signal.get("action", "NONE")
 
                     if action in ["BUY", "SELL"]:
-                        _bot_log(user_id, f"[{now_str}] PATTERN FOUND! {action} on {mt5_symbol}")
+                        _bot_log(user_id, strategy_id, f"[{now_str}] PATTERN FOUND! {action} on {mt5_symbol}")
                         volume = signal.get("volume", 0.01)
                         sl = signal.get("sl", 150)
                         tp = signal.get("tp", 300)
 
-                        # Execute REAL trade on MT5 (still inside the lock — same account)
                         success, msg, entry_price = place_real_mt5_trade(mt5_symbol, action, volume, sl, tp, user=user)
 
                         if success:
@@ -333,17 +332,16 @@ def _run_bot_loop(user_id, stop_event):
                                 quantity=volume, entryPrice=entry_price, currentPrice=entry_price,
                                 pnl=0.0, status='OPEN'
                             )
-                            _bot_log(user_id, f"[{now_str}] Trade placed on MT5! {action} {mt5_symbol} vol={volume} SL={sl} TP={tp}")
-                            _bot_log(user_id, f"[{now_str}] MT5 Response: {msg}")
+                            _bot_log(user_id, strategy_id, f"[{now_str}] Trade placed on MT5! {action} {mt5_symbol} vol={volume} SL={sl} TP={tp}")
+                            _bot_log(user_id, strategy_id, f"[{now_str}] MT5 Response: {msg}")
                         else:
-                            _bot_log(user_id, f"[{now_str}] Trade failed: {msg}")
+                            _bot_log(user_id, strategy_id, f"[{now_str}] Trade failed: {msg}")
 
                     elif action in ["CLOSE_BUY", "CLOSE_SELL"]:
-                        _bot_log(user_id, f"[{now_str}] Signal to {action} on {mt5_symbol} (opposing position)")
+                        _bot_log(user_id, strategy_id, f"[{now_str}] Signal to {action} on {mt5_symbol} (opposing position)")
                         success, msg = close_mt5_position(mt5_symbol, user=user)
                         if success:
-                            _bot_log(user_id, f"[{now_str}] Successfully closed position on MT5! {msg}")
-                            # Update trade status in DB for ALL users sharing this MT5 account
+                            _bot_log(user_id, strategy_id, f"[{now_str}] Successfully closed position on MT5! {msg}")
                             open_trades = Trade.objects.filter(
                                 user__exnessAccountId=user.exnessAccountId, 
                                 symbol=mt5_symbol, 
@@ -353,26 +351,26 @@ def _run_bot_loop(user_id, stop_event):
                                 t.status = 'CLOSED'
                                 t.save()
                         else:
-                            _bot_log(user_id, f"[{now_str}] Failed to close position: {msg}")
+                            _bot_log(user_id, strategy_id, f"[{now_str}] Failed to close position: {msg}")
                     else:
-                        _bot_log(user_id, f"[{now_str}] No pattern on {mt5_symbol} ({mt5_tf}). Next scan in 30s...")
+                        _bot_log(user_id, strategy_id, f"[{now_str}] No pattern on {mt5_symbol} ({mt5_tf}). Next scan in 30s...")
 
         except Exception as e:
-            _bot_log(user_id, f"Error: {e}")
+            _bot_log(user_id, strategy_id, f"Error: {e}")
 
-        # Sleep in small chunks so we can stop quickly
         for _ in range(30):
             if stop_event.is_set():
                 break
             _time.sleep(1)
 
-    _bot_log(user_id, "Bot engine stopped.")
+    _bot_log(user_id, strategy_id, "Bot engine stopped.")
 
 
 class ToggleStrategyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        from .models import UserActiveStrategy
         strategy_id = request.data.get('strategyId')
         symbol = request.data.get('symbol')
         timeframe = request.data.get('timeframe')
@@ -391,21 +389,13 @@ class ToggleStrategyView(APIView):
                     }
                 )
 
-                # EXCLUSIVE MODE: Always stop any existing bot thread first (regardless of strategy)
-                old_event = _bot_threads.pop(user.id, None)
-                if old_event:
-                    old_event.set()
-                _bot_logs.pop(user.id, None)
-
-                # Toggle: if the SAME strategy is already active → deactivate
-                if user.activeStrategy and user.activeStrategy.id == strategy.id:
-                    user.activeStrategy = None
-                    user.active_symbol = None
-                    user.active_timeframe = None
-                    user.save()
+                try:
+                    active_strat = UserActiveStrategy.objects.get(user=user, strategy=strategy)
+                    # Toggle: if the SAME strategy is already active → deactivate
+                    active_strat.delete()
 
                     # Stop the background bot thread
-                    stop_event = _bot_threads.pop(user.id, None)
+                    stop_event = _bot_threads.pop((user.id, strategy.id), None)
                     if stop_event:
                         stop_event.set()
 
@@ -438,19 +428,18 @@ class ToggleStrategyView(APIView):
 
                     return Response({'success': True, 'message': 'Strategy stopped'})
 
-                # Different or no strategy active → activate the new one
-                else:
-                    user.activeStrategy = strategy
-                    user.active_symbol = symbol
-                    user.active_timeframe = timeframe
-                    user.save()
+                except UserActiveStrategy.DoesNotExist:
+                    # Different or no strategy active → activate the new one
+                    UserActiveStrategy.objects.create(
+                        user=user, strategy=strategy, symbol=symbol, timeframe=timeframe
+                    )
 
                     # Start a new background bot thread for the selected strategy
                     stop_event = threading.Event()
-                    _bot_threads[user.id] = stop_event
+                    _bot_threads[(user.id, strategy.id)] = stop_event
                     t = threading.Thread(
                         target=_run_bot_loop,
-                        args=(user.id, stop_event),
+                        args=(user.id, strategy.id, stop_event),
                         daemon=True
                     )
                     t.start()
@@ -466,32 +455,82 @@ class BotStatusView(APIView):
     permission_classes = [IsAuthenticated]
  
     def get(self, request):
+        from .models import UserActiveStrategy
         user = request.user
-        is_running = user.id in _bot_threads and not _bot_threads[user.id].is_set()
-       
-        if user.activeStrategy and not is_running:
-            stop_event = threading.Event()
-            _bot_threads[user.id] = stop_event
-            t = threading.Thread(
-                target=_run_bot_loop,
-                args=(user.id, stop_event),
-                daemon=True
-            )
-            t.start()
-            is_running = True
+        strategy_id = request.query_params.get('strategyId')
+        
+        if strategy_id:
+            try:
+                strategy_id = int(strategy_id)
+            except ValueError:
+                pass
+                
+            is_running = (user.id, strategy_id) in _bot_threads and not _bot_threads[(user.id, strategy_id)].is_set()
             
-        logs = list(_bot_logs.get(user.id, []))
-        return Response({
-            'success': True,
-            'running': is_running,
-            'symbol': user.active_symbol,
-            'timeframe': user.active_timeframe,
-            'strategyName': user.activeStrategy.name if getattr(user, 'activeStrategy', None) else 'Double Top / Double Bottom',
-            'strategy_name': user.activeStrategy.name if user.activeStrategy else None,
-            'success_rate': user.activeStrategy.successRate if user.activeStrategy else None,
-            'risk_reward': user.activeStrategy.riskReward if user.activeStrategy else None,
-            'logs': logs
-        })
+            try:
+                active_strat = UserActiveStrategy.objects.get(user=user, strategy_id=strategy_id)
+                if not is_running:
+                    stop_event = threading.Event()
+                    _bot_threads[(user.id, strategy_id)] = stop_event
+                    t = threading.Thread(
+                        target=_run_bot_loop,
+                        args=(user.id, strategy_id, stop_event),
+                        daemon=True
+                    )
+                    t.start()
+                    is_running = True
+                
+                symbol = active_strat.symbol
+                timeframe = active_strat.timeframe
+                strategy_name = active_strat.strategy.name
+                success_rate = active_strat.strategy.successRate
+                risk_reward = active_strat.strategy.riskReward
+            except UserActiveStrategy.DoesNotExist:
+                symbol = None
+                timeframe = None
+                strategy_name = None
+                success_rate = None
+                risk_reward = None
+                
+            logs = list(_bot_logs.get((user.id, strategy_id), []))
+            return Response({
+                'success': True,
+                'running': is_running,
+                'symbol': symbol,
+                'timeframe': timeframe,
+                'strategyName': strategy_name,
+                'strategy_name': strategy_name,
+                'success_rate': success_rate,
+                'risk_reward': risk_reward,
+                'logs': logs
+            })
+        else:
+            # SyncState global fetch
+            active_strats = UserActiveStrategy.objects.filter(user=user)
+            running_list = []
+            for strat in active_strats:
+                s_id = strat.strategy.id
+                is_running = (user.id, s_id) in _bot_threads and not _bot_threads[(user.id, s_id)].is_set()
+                if not is_running:
+                    stop_event = threading.Event()
+                    _bot_threads[(user.id, s_id)] = stop_event
+                    t = threading.Thread(
+                        target=_run_bot_loop,
+                        args=(user.id, s_id, stop_event),
+                        daemon=True
+                    )
+                    t.start()
+                    is_running = True
+                running_list.append({
+                    'strategy_id': s_id,
+                    'strategy_name': strat.strategy.name,
+                    'running': is_running
+                })
+                
+            return Response({
+                'success': True,
+                'active_strategies': running_list
+            })
 
 
 # ─────────────── Trades API ───────────────
