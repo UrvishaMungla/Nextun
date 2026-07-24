@@ -73,3 +73,16 @@ class Trade(models.Model):
 
     def __str__(self):
         return f"{self.symbol} - {self.type} - {self.status}"
+
+class UserActiveStrategy(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='active_strategies')
+    strategy = models.ForeignKey(Strategy, on_delete=models.CASCADE)
+    symbol = models.CharField(max_length=50)
+    timeframe = models.CharField(max_length=10)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'strategy')
+
+    def __str__(self):
+        return f"{self.user.email} - {self.strategy.name}"

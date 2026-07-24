@@ -72,14 +72,22 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         const data = await res.json();
         if (data.success) {
-          if (data.running) {
+          const activeList = data.active_strategies || [];
+          const dtEntry = activeList.find(s => s.strategy_name && s.strategy_name.includes('Double'));
+          const ltEntry = activeList.find(s => s.strategy_name && s.strategy_name.includes('Liquidity'));
+          
+          if (dtEntry && dtEntry.running) {
             sessionStorage.setItem('dt_strategy_active', 'true');
-            if (data.symbol) sessionStorage.setItem('dt_strategy_symbol', data.symbol);
-            if (data.timeframe) sessionStorage.setItem('dt_strategy_timeframe', data.timeframe);
-            if (data.strategyName) sessionStorage.setItem('dt_strategy_name', data.strategyName);
           } else {
             sessionStorage.removeItem('dt_strategy_active');
           }
+
+          if (ltEntry && ltEntry.running) {
+            sessionStorage.setItem('lt_strategy_active', 'true');
+          } else {
+            sessionStorage.removeItem('lt_strategy_active');
+          }
+          
           updateStrategyUI();
         }
       }
@@ -105,38 +113,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // -- 1. Strategy Status Card --
     function updateStrategyUI() {
-      // FIX: Strategy is ONLY shown as Active when BOTH:
-      //   (a) dt_strategy_active === 'true'  (user clicked Activate)
-      //   (b) bt_trades has actual trade data (backtest was run, not just activated)
-      var isStratActive = sessionStorage.getItem('dt_strategy_active') === 'true';
-      var btTradesRaw   = sessionStorage.getItem('bt_trades');
-      var hasBacktestData = false;
-      if (btTradesRaw) {
-        try { hasBacktestData = JSON.parse(btTradesRaw).length > 0; } catch(e) {}
+      var isDtActive = sessionStorage.getItem('dt_strategy_active') === 'true';
+      var isLtActive = sessionStorage.getItem('lt_strategy_active') === 'true';
+      
+      var activeCount = 0;
+      var activeNames = [];
+      if (isDtActive) {
+        activeCount++;
+        activeNames.push('Double Top / Double Bottom');
       }
-      // Show as active if the strategy is enabled by the user
-      var isReallyActive = isStratActive;
-  
-      var stratName    = sessionStorage.getItem('dt_strategy_name')      || 'No Active Strategy';
-      var stratSymbol  = sessionStorage.getItem('dt_strategy_symbol')    || '';
-      var stratTf      = sessionStorage.getItem('dt_strategy_timeframe') || '';
-      var stratWinRate = sessionStorage.getItem('dt_strategy_winrate')   || '--';
-      var stratRR      = sessionStorage.getItem('dt_strategy_rr')        || '1:2';
+      if (isLtActive) {
+        activeCount++;
+        activeNames.push('Liquidity Trap');
+      }
   
       var nameEl = document.getElementById('dash-strategy-name');
       var descEl = document.getElementById('dash-strategy-desc');
       var swEl   = document.getElementById('dash-strategy-switch');
       var smEl   = document.getElementById('dash-strategy-metrics');
-      var wrEl   = document.getElementById('dash-strategy-winrate');
-      var rrEl   = document.getElementById('dash-strategy-rr');
   
-      if (isReallyActive && stratName !== 'No Active Strategy') {
-        if (nameEl) nameEl.textContent = stratName;
-        if (descEl) descEl.textContent = stratSymbol + ' | ' + stratTf + ' | Auto-Running';
-        if (wrEl)   wrEl.textContent   = stratWinRate;
-        if (rrEl)   rrEl.textContent   = stratRR;
+      if (activeCount === 1) {
+        if (nameEl) nameEl.textContent = '1 Strategy Active';
+        if (descEl) descEl.textContent = activeNames[0] + ' is currently running.';
         if (swEl)   swEl.style.display = 'block';
-        if (smEl)   smEl.style.display = 'flex';
+        if (smEl)   smEl.style.display = 'none';
+      } else if (activeCount >= 2) {
+        if (nameEl) nameEl.textContent = activeCount + ' Strategies Active';
+        if (descEl) descEl.textContent = 'Both ' + activeNames.join(' and ') + ' are running.';
+        if (swEl)   swEl.style.display = 'block';
+        if (smEl)   smEl.style.display = 'none';
       } else {
         if (nameEl) nameEl.textContent = 'No Active Strategy';
         if (descEl) descEl.textContent = 'Navigate to the Strategies page to enable one.';
