@@ -324,7 +324,8 @@ def _run_bot_loop(user_id, strategy_id, stop_event):
                         sl = signal.get("sl", 150)
                         tp = signal.get("tp", 300)
 
-                        success, msg, entry_price = place_real_mt5_trade(mt5_symbol, action, volume, sl, tp, user=user)
+                        magic_number = 999111 if strategy_id == 1 else 999222
+                        success, msg, entry_price = place_real_mt5_trade(mt5_symbol, action, volume, sl, tp, user=user, magic=magic_number)
 
                         if success:
                             Trade.objects.create(
@@ -548,6 +549,20 @@ class TradesView(APIView):
                 'metrics': {'totalPnl': 0.0, 'winRate': 0, 'totalTrades': 0}
             })
 
+        # Only show live trades if the user has at least one actively running strategy
+        is_any_running = False
+        for (uid, sid), stop_event in _bot_threads.items():
+            if uid == user.id and not stop_event.is_set():
+                is_any_running = True
+                break
+                
+        if not is_any_running:
+            return Response({
+                'success': True,
+                'data': [],
+                'metrics': {'totalPnl': 0.0, 'winRate': 0, 'totalTrades': 0}
+            })
+
         import MetaTrader5 as mt5
         from .dbtp_dbbtm import initialize, mt5_lock
         from datetime import datetime, timedelta
@@ -575,9 +590,15 @@ class TradesView(APIView):
             # Process open positions first
             if positions:
                 for pos in positions:
+                    magic_num = getattr(pos, 'magic', 0)
+                    if magic_num not in (999111, 999222):
+                        continue
+                    
+                    strat_name = "Double Top" if magic_num == 999111 else "Liquidity Trap"
                     pos_type = 'BUY' if pos.type == mt5.ORDER_TYPE_BUY else 'SELL'
                     trades_list.append({
                         'id': pos.ticket,
+                        'strategy_name': strat_name,
                         'symbol': pos.symbol,
                         'type': pos_type,
                         'quantity': pos.volume,
@@ -619,14 +640,17 @@ class TradesView(APIView):
                         elif d.entry == 1:  # DEAL_ENTRY_OUT
                             exit_deal = d
 
-                    if entry_deal:
+                    magic_num = getattr(entry_deal, 'magic', 0) if entry_deal else 0
+                    if entry_deal and magic_num in (999111, 999222):
                         deal_type = 'BUY' if entry_deal.type == 0 else 'SELL'
                         pnl = round(exit_deal.profit, 4) if exit_deal else 0.0
                         exit_price = exit_deal.price if exit_deal else entry_deal.price
                         status = 'CLOSED' if exit_deal else 'OPEN'
+                        strat_name = "Double Top" if magic_num == 999111 else "Liquidity Trap"
 
                         trades_list.append({
                             'id': pos_id,
+                            'strategy_name': strat_name,
                             'symbol': entry_deal.symbol,
                             'type': deal_type,
                             'quantity': entry_deal.volume,
