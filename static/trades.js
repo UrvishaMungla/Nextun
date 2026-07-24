@@ -168,6 +168,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       return `
         <tr>
           <td style="font-weight:600;">${displaySym}</td>
+          <td style="font-size:12px; font-weight:600; color:var(--text-gray); white-space:nowrap;">
+            ${t.strategy_name || '-'}
+          </td>
           <td>
             <span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;
               background:${isLong ? '#dcfce7':'#fee2e2'};color:${isLong ? '#16a34a':'#dc2626'};">
